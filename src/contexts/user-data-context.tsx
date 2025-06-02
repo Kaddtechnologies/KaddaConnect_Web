@@ -26,7 +26,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [posts, setPosts] = useState<Post[]>(placeholderPosts);
   const [members, setMembers] = useState<Member[]>(placeholderMembers);
   const [prayerRequests, setPrayerRequests] = useState<PrayerRequest[]>(placeholderPrayerRequests);
-  const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(placeholderDailyVerse);
+  const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(null); // Initialize to null
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -49,6 +49,19 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUserProfile(null);
     }
   }, [authUser, members]);
+
+  useEffect(() => {
+    // Simulate fetching daily verse from Firestore
+    const fetchDailyVerse = async () => {
+      // In a real app, you'd fetch from Firestore here,
+      // possibly querying for a document matching the current date.
+      // For now, we'll just use the placeholder after a delay.
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      setDailyVerse(placeholderDailyVerse);
+    };
+
+    fetchDailyVerse();
+  }, []); // Empty dependency array means this runs once on mount
 
 
   const addPost = (content: string, imageUrl?: string) => {
