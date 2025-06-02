@@ -102,7 +102,7 @@ export interface PrayerNote {
 }
 
 export interface PrayerSession {
-  id: string;
+  id:string;
   userId: string;
   date: string; // ISO string date
   durationMinutes?: number; // Optional
@@ -113,4 +113,27 @@ export interface PrayerSession {
 // Type for the new AnswerDetailsModal
 export interface AnswerDetails {
   description: string;
+}
+
+// --- Types for Sermon Notes Module ---
+export interface Sermon {
+  id: string;
+  title: string;
+  speaker: string;
+  date: string; // ISO string date
+  scriptureReferences?: string[]; // e.g., ["John 3:16", "Psalm 23"]
+  topics?: string[]; // e.g., ["Faith", "Grace", "Community"]
+  youtubeUrl?: string;
+  summary?: string; // Brief summary or description
+  dataAiHint?: string; // For image placeholders
+  coverImageUrl?: string; // For sermon card
+}
+
+export interface SermonNote {
+  id: string;
+  sermonId: string;
+  userId: string;
+  content: string; // For now, plain text or markdown. Could be rich text later.
+  createdAt: string; // ISO string date
+  updatedAt?: string; // ISO string date
 }

@@ -1,5 +1,5 @@
 
-import type { UserProfile, Post, Member, OldPrayerRequest, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession, ChatConversation, ChatMessage } from '@/types';
+import type { UserProfile, Post, Member, OldPrayerRequest, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession, ChatConversation, ChatMessage, Sermon, SermonNote } from '@/types';
 
 export const placeholderUser: UserProfile = {
   id: 'user1',
@@ -98,8 +98,6 @@ export const placeholderDailyVerse: DailyVerse = {
   text: 'Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.',
   date: new Date().toISOString().split('T')[0], 
 };
-
-// --- New Placeholder Data for Prayer Module ---
 
 export const placeholderArticles: Article[] = [
   {
@@ -233,5 +231,69 @@ export const placeholderChatConversations: ChatConversation[] = [
     ],
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 + 5000).toISOString(),
+  }
+];
+
+// --- Placeholder Data for Sermon Notes Module ---
+export const placeholderSermons: Sermon[] = [
+  {
+    id: 'sermon1',
+    title: 'The Unshakeable Kingdom',
+    speaker: 'Pastor Sarah Lee',
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 1 week ago
+    scriptureReferences: ['Hebrews 12:28-29'],
+    topics: ['Faith', 'Kingdom of God', 'Endurance'],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Example video
+    summary: 'Exploring the eternal nature of God\'s kingdom and how we can live as citizens of it.',
+    coverImageUrl: 'https://placehold.co/400x250.png',
+    dataAiHint: 'church sermon abstract',
+  },
+  {
+    id: 'sermon2',
+    title: 'Love Your Neighbor As Yourself',
+    speaker: 'Rev. Mike Johnson',
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(), // 2 weeks ago
+    scriptureReferences: ['Mark 12:31', '1 Corinthians 13'],
+    topics: ['Love', 'Community', 'Relationships'],
+    summary: 'A deep dive into the second greatest commandment and its practical implications.',
+    coverImageUrl: 'https://placehold.co/400x250.png',
+    dataAiHint: 'community hands',
+  },
+  {
+    id: 'sermon3',
+    title: 'The Power of Forgiveness',
+    speaker: 'Guest Speaker Dr. Emily White',
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 21).toISOString(), // 3 weeks ago
+    scriptureReferences: ['Matthew 6:14-15', 'Ephesians 4:32'],
+    topics: ['Forgiveness', 'Healing', 'Grace'],
+    youtubeUrl: 'https://www.youtube.com/embed/rokGy0huYEA', // Another example video
+    summary: 'Understanding the transformative power of both receiving and extending forgiveness.',
+    coverImageUrl: 'https://placehold.co/400x250.png',
+    dataAiHint: 'light forgiveness',
+  }
+];
+
+export const placeholderSermonNotes: SermonNote[] = [
+  {
+    id: 'snote1',
+    sermonId: 'sermon1',
+    userId: 'user1',
+    content: 'Key takeaway: Focus on eternal values, not temporary struggles. The kingdom of God is within us.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7 + 3600000).toISOString(), // During sermon 1
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(), // Edited a day later
+  },
+  {
+    id: 'snote2',
+    sermonId: 'sermon1',
+    userId: 'user1',
+    content: 'Hebrews 12:28 - "Therefore, since we are receiving a kingdom that cannot be shaken, let us be thankful, and so worship God acceptably with reverence and awe."',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7 + 7200000).toISOString(), // During sermon 1
+  },
+  {
+    id: 'snote3',
+    sermonId: 'sermon2',
+    userId: 'user1',
+    content: 'Practical ways to love my neighbor: active listening, offering help without expecting return, praying for them.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14 + 3600000).toISOString(), // During sermon 2
   }
 ];

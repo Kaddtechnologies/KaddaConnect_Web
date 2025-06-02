@@ -4,12 +4,17 @@
 import { useUserData } from '@/contexts/user-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpenText, Share2 } from 'lucide-react';
+import { BookOpenText, Share2, Library, Search } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import Link from 'next/link';
+import SermonCard from '@/components/resources/SermonCard';
+import { useState, useMemo } from 'react';
+import { Input } from '@/components/ui/input';
 
 export default function ResourcesPage() {
-  const { dailyVerse } = useUserData();
+  const { dailyVerse, sermons: allSermons } = useUserData();
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleShareVerse = () => {
     if (dailyVerse) {
@@ -18,10 +23,9 @@ export default function ResourcesPage() {
         navigator.share({
           title: 'Verse of the Day',
           text: shareText,
-          url: window.location.href, // Or a specific URL for the verse if available
+          url: window.location.href,
         }).catch((error) => console.error('Error sharing:', error));
       } else {
-        // Fallback for browsers that don't support navigator.share
         navigator.clipboard.writeText(shareText).then(() => {
           toast({ title: "Copied to clipboard!", description: "Verse copied successfully." });
         }).catch((err) => {
@@ -31,12 +35,24 @@ export default function ResourcesPage() {
     }
   };
 
+  const filteredSermons = useMemo(() => {
+    if (!allSermons) return [];
+    if (!searchTerm.trim()) return allSermons;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return allSermons.filter(sermon =>
+      sermon.title.toLowerCase().includes(lowerSearchTerm) ||
+      sermon.speaker.toLowerCase().includes(lowerSearchTerm) ||
+      (sermon.topics && sermon.topics.some(topic => topic.toLowerCase().includes(lowerSearchTerm))) ||
+      (sermon.scriptureReferences && sermon.scriptureReferences.some(ref => ref.toLowerCase().includes(lowerSearchTerm)))
+    );
+  }, [allSermons, searchTerm]);
+
   return (
     <div className="container mx-auto max-w-3xl py-0 md:py-6">
       <div className="mb-6 md:mb-8 text-center">
         <BookOpenText className="mx-auto h-12 w-12 text-primary mb-3" />
         <h1 className="text-3xl md:text-4xl font-headline text-primary mb-2">Spiritual Resources</h1>
-        <p className="text-muted-foreground">Nourish your faith with daily verses, devotionals, and more.</p>
+        <p className="text-muted-foreground">Nourish your faith with daily verses, devotionals, and sermon notes.</p>
       </div>
 
       {dailyVerse && (
@@ -60,28 +76,46 @@ export default function ResourcesPage() {
         </Card>
       )}
 
-      {/* Placeholder for Sermon Notes and Devotionals */}
-      <div className="space-y-6">
-        <Card className="shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-xl font-headline">Sermon Notes</CardTitle>
-            <CardDescription>Catch up on recent messages.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Sermon notes will be available here soon.</p>
-          </CardContent>
-        </Card>
+      <Card className="mb-8 shadow-xl rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl font-headline text-primary flex items-center">
+            <Library className="h-7 w-7 mr-3" />
+            Sermon Archive
+          </CardTitle>
+          <CardDescription>Explore past sermons and take notes.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="relative mb-6">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search sermons by title, speaker, topic..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-11 pr-4 py-3 text-base rounded-lg shadow-sm"
+            />
+          </div>
+          {filteredSermons.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {filteredSermons.map(sermon => (
+                <SermonCard key={sermon.id} sermon={sermon} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">No sermons found matching your search.</p>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card className="shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-xl font-headline">Devotional Readings</CardTitle>
-            <CardDescription>Find daily encouragement and reflection.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Devotionals will be available here soon.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="shadow-lg rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-xl font-headline">Devotional Readings</CardTitle>
+          <CardDescription>Find daily encouragement and reflection.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Devotionals will be available here soon.</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
