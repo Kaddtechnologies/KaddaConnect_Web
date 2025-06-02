@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ChatMessage } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,13 @@ import { Send, MessageCircle, Bot, User, AlertTriangle, Loader2 } from 'lucide-r
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
-import { askSpiritualChatbot } from '@/ai/flows/spiritual-chat-flow'; // Import the Genkit flow
+import { askSpiritualChatbot } from '@/ai/flows/spiritual-chat-flow'; 
 
-// Placeholder for quick replies
 const quickReplies = [
-  "Tell me a comforting bible verse.",
-  "How can I pray effectively?",
-  "What does the Bible say about hope?",
+  "I'm feeling stressed today.",
+  "Can you give me a Bible verse for encouragement?",
+  "What does the Bible say about forgiveness?",
+  "I need a prayer for strength."
 ];
 
 export default function ChatPage() {
@@ -25,10 +25,42 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [chatContainerHeight, setChatContainerHeight] = useState('auto');
+
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (typeof window !== 'undefined') {
+        const headerHeight = window.innerWidth < 768 ? (document.querySelector('.md\\:hidden.sticky.top-0')?.clientHeight || 64) : (document.querySelector('.hidden.md\\:flex.sticky.top-0')?.clientHeight || 64);
+        const bottomNavHeight = window.innerWidth < 768 ? (document.querySelector('nav.fixed.bottom-0')?.clientHeight || 64) : 0;
+        const viewportHeight = window.innerHeight;
+        // Subtract padding/margins of parent elements as well if any. Let's assume 24px total for p-3 on mobile.
+        const pagePadding = window.innerWidth < 768 ? 24 : 48; // p-3 vs md:p-6
+        
+        const availableHeight = viewportHeight - headerHeight - bottomNavHeight - pagePadding;
+        setChatContainerHeight(`${Math.max(300, availableHeight)}px`); // Min height 300px
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+
+  useEffect(() => {
+    // Scroll to bottom when new messages are added
+    if (scrollAreaRef.current) {
+      const scrollableViewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+      if (scrollableViewport) {
+        scrollableViewport.scrollTop = scrollableViewport.scrollHeight;
+      }
+    }
+  }, [messages]);
 
   const handleSendMessage = async (text?: string) => {
     const messageText = text || inputValue.trim();
-    if (!messageText) return;
+    if (!messageText || !currentUser) return;
 
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -36,7 +68,9 @@ export default function ChatPage() {
       sender: 'user',
       timestamp: new Date().toISOString(),
     };
-    setMessages((prev) => [...prev, userMessage]);
+    
+    const currentMessagesWithUser = [...messages, userMessage];
+    setMessages(currentMessagesWithUser);
     setInputValue('');
     setIsLoadingResponse(true);
 
@@ -53,7 +87,18 @@ export default function ChatPage() {
     ]);
 
     try {
-      const response = await askSpiritualChatbot({ message: messageText });
+      // Prepare history for the Genkit flow
+      const historyForFlow = currentMessagesWithUser.map(msg => ({
+        sender: msg.sender,
+        text: msg.text,
+      }));
+      
+      const response = await askSpiritualChatbot({ 
+        message: messageText,
+        userName: currentUser.displayName.split(' ')[0] || currentUser.displayName, // Use first name
+        history: historyForFlow.slice(0, -1) // Pass all messages except the current user message
+      });
+
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botMessageId
@@ -76,65 +121,81 @@ export default function ChatPage() {
   };
 
   const getSenderAvatar = (sender: 'user' | 'bot') => {
-    if (sender === 'user') {
+    if (sender === 'user' && currentUser) {
       return {
-        src: currentUser?.profilePictureUrl,
-        fallback: currentUser?.displayName?.charAt(0).toUpperCase() || 'U',
-        alt: currentUser?.displayName || 'User',
+        src: currentUser.profilePictureUrl,
+        fallback: currentUser.displayName?.charAt(0).toUpperCase() || 'U',
+        alt: currentUser.displayName || 'User',
         dataAiHint: 'profile person'
       };
     }
+    // For bot, using a generic icon. You can replace with a specific bot avatar URL if you have one.
     return {
-      src: undefined, // Or a specific bot avatar URL
-      fallback: <Bot className="h-5 w-5"/>,
-      alt: 'KaddaBot',
+      src: undefined, 
+      fallback: <Bot className="h-5 w-5 text-primary"/>, // Changed to use primary color for bot fallback
+      alt: "The Potter's Wisdom A.I.",
       dataAiHint: 'bot avatar'
     };
   };
 
   return (
-    <div className="container mx-auto max-w-2xl py-0 md:py-6 h-[calc(100vh-var(--header-height,0px)-var(--bottom-nav-height,0px))] md:h-auto">
-      <Card className="flex flex-col h-full shadow-xl rounded-xl">
-        <CardHeader className="text-center border-b">
-          <MessageCircle className="mx-auto h-10 w-10 text-primary mb-2" />
-          <CardTitle className="text-2xl font-headline">Spiritual Guidance Chat</CardTitle>
-          <p className="text-sm text-muted-foreground">Ask questions, find encouragement, or explore topics of faith.</p>
+    <div 
+        className="container mx-auto max-w-2xl py-0 md:py-6"
+        style={{ height: chatContainerHeight }}
+    >
+      <Card className="flex flex-col h-full shadow-xl rounded-xl overflow-hidden">
+        <CardHeader className="text-center border-b p-4">
+          <div className="flex items-center justify-center gap-2">
+            <Avatar className="h-10 w-10 border-2 border-primary/30">
+                 <AvatarImage src={undefined} alt="The Potter's Wisdom A.I." data-ai-hint="bot avatar wisdom" />
+                 <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                    <MessageCircle className="h-5 w-5"/>
+                 </AvatarFallback>
+            </Avatar>
+            <div>
+                <CardTitle className="text-xl md:text-2xl font-headline text-primary">The Potter&apos;s Wisdom A.I.</CardTitle>
+                <p className="text-xs md:text-sm text-muted-foreground">Your companion for spiritual encouragement.</p>
+            </div>
+          </div>
         </CardHeader>
         
-        <ScrollArea className="flex-grow p-4 space-y-4">
+        <ScrollArea ref={scrollAreaRef} className="flex-grow p-4 space-y-4 bg-muted/20">
           {messages.length === 0 && (
-            <div className="text-center text-muted-foreground py-10">
-              <p>No messages yet. Start the conversation!</p>
+            <div className="text-center text-muted-foreground py-10 flex flex-col items-center justify-center h-full">
+              <MessageCircle className="h-16 w-16 text-primary/50 mb-4" />
+              <p className="text-lg font-semibold">Welcome, {currentUser?.displayName?.split(' ')[0]}!</p>
+              <p>How are you feeling today?</p>
+              <p className="text-xs mt-2">You can start by typing a message or selecting a quick reply below.</p>
             </div>
           )}
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex items-start gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.sender === 'bot' && (
-                <Avatar className="h-8 w-8 self-start border">
-                  <AvatarImage src={getSenderAvatar(msg.sender).src} alt={getSenderAvatar(msg.sender).alt} data-ai-hint={getSenderAvatar(msg.sender).dataAiHint} />
+                <Avatar className="h-8 w-8 self-start border shadow-sm">
+                  <AvatarImage src={getSenderAvatar(msg.sender).src} alt={getSenderAvatar(msg.sender).alt as string} data-ai-hint={getSenderAvatar(msg.sender).dataAiHint} />
                   <AvatarFallback>{getSenderAvatar(msg.sender).fallback}</AvatarFallback>
                 </Avatar>
               )}
               <div
-                className={`max-w-[70%] rounded-lg px-3 py-2 shadow-md ${
+                className={`max-w-[75%] rounded-xl px-3.5 py-2.5 shadow-md ${
                   msg.sender === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card border'
+                    ? 'bg-primary text-primary-foreground rounded-br-none'
+                    : 'bg-card border rounded-bl-none'
                 }`}
               >
-                {msg.status === 'loading' && <Loader2 className="h-4 w-4 animate-spin my-1" />}
-                {msg.status === 'error' && <p className="text-destructive-foreground flex items-center"><AlertTriangle className="h-4 w-4 mr-1.5"/> {msg.text}</p>}
+                {msg.status === 'loading' && <Loader2 className="h-4 w-4 animate-spin my-1 text-muted-foreground" />}
+                {msg.status === 'error' && <p className="text-destructive-foreground flex items-center text-sm"><AlertTriangle className="h-4 w-4 mr-1.5"/> {msg.text}</p>}
                 {msg.status !== 'loading' && msg.status !== 'error' && <p className="text-sm whitespace-pre-wrap">{msg.text}</p>}
-                <p className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground'}`}>
+                <p className={`text-xs mt-1.5 ${msg.sender === 'user' ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground/80'}`}>
                   {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}
                 </p>
               </div>
-              {msg.sender === 'user' && (
-                 <Avatar className="h-8 w-8 self-start border">
-                  <AvatarImage src={getSenderAvatar(msg.sender).src} alt={getSenderAvatar(msg.sender).alt} data-ai-hint={getSenderAvatar(msg.sender).dataAiHint} />
+              {msg.sender === 'user' && currentUser && (
+                 <Avatar className="h-8 w-8 self-start border shadow-sm">
+                  <AvatarImage src={getSenderAvatar(msg.sender).src} alt={getSenderAvatar(msg.sender).alt as string} data-ai-hint={getSenderAvatar(msg.sender).dataAiHint} />
                   <AvatarFallback>{getSenderAvatar(msg.sender).fallback}</AvatarFallback>
                 </Avatar>
               )}
@@ -142,8 +203,8 @@ export default function ChatPage() {
           ))}
         </ScrollArea>
 
-        <div className="p-4 border-t">
-           {messages.length > 0 && messages[messages.length -1].sender === 'bot' && !isLoadingResponse && quickReplies.length > 0 && (
+        <div className="p-4 border-t bg-card">
+           {(messages.length === 0 || (messages.length > 0 && messages[messages.length -1].sender === 'bot' && !isLoadingResponse)) && quickReplies.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {quickReplies.map((reply, index) => (
                 <Button
@@ -151,7 +212,7 @@ export default function ChatPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleSendMessage(reply)}
-                  className="text-xs rounded-full"
+                  className="text-xs rounded-full shadow-sm hover:bg-primary/10 hover:border-primary/50"
                 >
                   {reply}
                 </Button>
@@ -167,26 +228,20 @@ export default function ChatPage() {
           >
             <Input
               type="text"
-              placeholder="Type your message..."
+              placeholder="Type your message to The Potter's Wisdom..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              className="flex-grow rounded-lg"
-              disabled={isLoadingResponse}
+              className="flex-grow rounded-lg shadow-inner text-sm"
+              disabled={isLoadingResponse || !currentUser}
             />
-            <Button type="submit" size="icon" className="rounded-lg bg-primary hover:bg-primary/90" disabled={isLoadingResponse || !inputValue.trim()}>
+            <Button type="submit" size="icon" className="rounded-lg bg-primary hover:bg-primary/90 shadow-md w-10 h-10" disabled={isLoadingResponse || !inputValue.trim() || !currentUser}>
               {isLoadingResponse ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               <span className="sr-only">Send</span>
             </Button>
           </form>
         </div>
       </Card>
-       {/* CSS trick to help ScrollArea fill height on mobile */}
-      <style jsx global>{`
-        :root {
-          --header-height: ${typeof window !== 'undefined' && window.innerWidth < 768 ? '4rem' : '0px'}; /* 64px for mobile header */
-          --bottom-nav-height: ${typeof window !== 'undefined' && window.innerWidth < 768 ? '4rem' : '0px'}; /* 64px for mobile bottom nav */
-        }
-      `}</style>
     </div>
   );
 }
+
