@@ -4,14 +4,14 @@
 import { useState, useEffect } from 'react';
 import { useUserData } from '@/contexts/user-data-context';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ListChecks, Edit2, Trash2, Sparkles, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, ListChecks, Sparkles, Loader2 } from 'lucide-react';
 import type { UserPrayer } from '@/types';
 import PrayerCard from '@/components/prayer/my-prayers/PrayerCard';
 import PrayerEditorModal from '@/components/prayer/my-prayers/PrayerEditorModal';
 import { useToast } from "@/hooks/use-toast";
 
 export default function MyPrayersPage() {
-  const { userPrayers, addUserPrayer, updateUserPrayer, deleteUserPrayer, markPrayerAsPrayed, markPrayerAsAnswered, isLoading: dataLoading } = useUserData();
+  const { userPrayers, addUserPrayer, updateUserPrayer, deleteUserPrayer, markPrayerAsPrayed, markPrayerAsAnswered, isLoading: dataLoading, currentUserProfile } = useUserData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrayer, setEditingPrayer] = useState<UserPrayer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +33,11 @@ export default function MyPrayersPage() {
     setIsModalOpen(true);
   };
 
-  const handleSavePrayer = (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt'>) => {
+  const handleSavePrayer = (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt' | 'isAnswered' | 'answeredAt' | 'answerDescription'>) => {
+    if (!currentUserProfile) {
+      toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+      return;
+    }
     if (editingPrayer) {
       updateUserPrayer(editingPrayer.id, prayerData);
       toast({ title: "Prayer Updated", description: `"${prayerData.title}" has been updated.` });
@@ -61,7 +65,9 @@ export default function MyPrayersPage() {
     const newAnsweredState = !prayer.isAnswered;
     // For simplicity, this example doesn't prompt for answer details here.
     // A more complete solution might open a small modal or inline form for `answerDescription`.
-    markPrayerAsAnswered(prayer.id, { description: newAnsweredState ? (prayer.answerDescription || "Answered!") : undefined });
+    markPrayerAsAnswered(prayer.id, { 
+      description: newAnsweredState ? (prayer.answerDescription || "Answered!") : undefined 
+    });
     toast({ 
       title: newAnsweredState ? "Prayer Answered!" : "Marked as Unanswered", 
       description: `"${prayer.title}" marked as ${newAnsweredState ? 'answered' : 'not yet answered'}.` 

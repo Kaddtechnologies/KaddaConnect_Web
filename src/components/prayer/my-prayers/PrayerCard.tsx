@@ -5,7 +5,7 @@ import type { UserPrayer } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, CheckCircle, XCircle, Clock, CalendarDays, MessageSquare } from 'lucide-react';
+import { Edit2, Trash2, CheckCircle, XCircle, Clock, CalendarDays, MessageSquare, Sparkles } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +30,7 @@ export default function PrayerCard({ prayer, onEdit, onDelete, onMarkAsPrayed, o
             <Badge 
               variant={prayer.isAnswered ? "default" : "secondary"} 
               className={cn(
-                "text-xs shrink-0", 
+                "text-xs shrink-0 capitalize", 
                 prayer.isAnswered ? "bg-green-600 text-white" : "bg-accent/20 text-accent-foreground"
               )}
             >
@@ -50,12 +50,13 @@ export default function PrayerCard({ prayer, onEdit, onDelete, onMarkAsPrayed, o
       </CardHeader>
       <CardContent className="p-4 pt-2 flex-grow">
         <p className="text-sm text-muted-foreground line-clamp-4 whitespace-pre-wrap">{prayer.content}</p>
-        {prayer.isAnswered && prayer.answerDescription && (
-            <div className="mt-3 pt-2 border-t border-green-500/30">
-                <p className="text-xs font-semibold text-green-400 flex items-center mb-0.5">
-                    <CheckCircle className="h-3.5 w-3.5 mr-1.5 text-green-500"/> Answered on {prayer.answeredAt ? format(parseISO(prayer.answeredAt), 'MMM d, yyyy') : ''}
+        {prayer.isAnswered && (
+            <div className="mt-3 pt-3 border-t border-green-500/30">
+                <p className="text-sm font-semibold text-green-400 flex items-center mb-1">
+                    <Sparkles className="h-4 w-4 mr-1.5 text-green-500 fill-green-500/30"/> 
+                    Answered {prayer.answeredAt ? `on ${format(parseISO(prayer.answeredAt), 'MMM d, yyyy')}` : ''}
                 </p>
-                <p className="text-xs text-green-200/80 italic line-clamp-2">{prayer.answerDescription}</p>
+                {prayer.answerDescription && <p className="text-xs text-green-200/80 italic line-clamp-3">{prayer.answerDescription}</p>}
             </div>
         )}
       </CardContent>

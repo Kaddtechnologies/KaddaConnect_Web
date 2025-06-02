@@ -5,6 +5,7 @@ import { BarChart3, PieChartIcon, ListChecks, TrendingUp, Award, CheckCircle as 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useUserData } from '@/contexts/user-data-context';
 import { useMemo } from 'react';
+import AnsweredPrayersList from '@/components/prayer/tracker/AnsweredPrayersList'; // Import the new component
 
 const StatCard = ({ title, value, icon: Icon, description, dataAiHint }: { title: string, value: string | number, icon: React.ElementType, description?: string, dataAiHint?: string }) => (
   <Card className="shadow-lg hover:shadow-primary/20 transition-shadow rounded-xl" data-ai-hint={dataAiHint || "statistic card"}>
@@ -35,22 +36,6 @@ const PlaceholderPieChart = () => (
   </Card>
 );
 
-const AnsweredPrayersList = () => (
- <Card className="shadow-lg col-span-1 md:col-span-3 rounded-xl">
-    <CardHeader>
-      <CardTitle className="text-xl font-headline">Answered Prayers Journal</CardTitle>
-      <CardDescription>Reflect on God's faithfulness. (Expandable list coming soon)</CardDescription>
-    </CardHeader>
-    <CardContent className="min-h-[200px] flex items-center justify-center bg-muted/30 rounded-b-xl">
-      <div className="text-center text-muted-foreground">
-        <ListChecks className="h-16 w-16 mx-auto mb-4 text-primary/50" />
-        <p className="font-semibold">Answered Prayers List</p>
-        <p className="text-sm">Coming Soon</p>
-      </div>
-    </CardContent>
-  </Card>
-);
-
 
 export default function PrayerTrackerPage() {
   const { userPrayers } = useUserData();
@@ -61,7 +46,6 @@ export default function PrayerTrackerPage() {
 
   const totalPrayersCount = userPrayers.length;
   
-  // Dummy data for StatCards - will be replaced with real calculations
   const stats = [
     { title: "Prayers Answered", value: answeredPrayersCount, icon: LucideCheckCircle, description: `out of ${totalPrayersCount} total`, dataAiHint: "answered prayers" },
     { title: "Current Prayer Streak", value: "0 days", icon: TrendingUp, description: "Feature coming soon!", dataAiHint: "prayer streak" },
@@ -104,7 +88,3 @@ export default function PrayerTrackerPage() {
     </div>
   );
 }
-
-// Note: The dummy CheckCircle from before is removed as we import LucideCheckCircle.
-// If a global CheckCircle component was intended for other purposes, it should be reviewed.
-// For now, assuming Lucide is preferred.

@@ -10,7 +10,7 @@ import {
   placeholderDailyVerse,
   placeholderArticles,
   placeholderUserArticleInteractions,
-  placeholderUserPrayers, // Ensure this provides initial prayers for the logged-in user or is empty
+  placeholderUserPrayers, 
   placeholderPrayerNotes,
   placeholderPrayerSessions
 } from '@/lib/placeholder-data';
@@ -20,13 +20,13 @@ interface UserDataContextType {
   // Existing data
   posts: Post[];
   members: Member[];
-  oldPrayerRequests: OldPrayerRequest[];
+  oldPrayerRequests: OldPrayerRequest[]; // To be phased out or kept for archival?
   dailyVerse: DailyVerse | null;
   currentUserProfile: UserProfile | null;
-  isLoading: boolean; // Added isLoading state
+  isLoading: boolean; 
   addPost: (content: string, imageUrl?: string) => void;
   toggleLikePost: (postId: string) => void;
-  addOldPrayerRequest: (requestText: string) => void;
+  addOldPrayerRequest: (requestText: string) => void; // To be phased out
   updateUserProfile: (updatedProfileData: Partial<UserProfile>) => void;
   getMemberById: (id: string) => Member | undefined;
 
@@ -55,14 +55,12 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const { user: authUser, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   
-  // Existing state
   const [posts, setPosts] = useState<Post[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [oldPrayerRequests, setOldPrayerRequests] = useState<OldPrayerRequest[]>([]);
   const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
 
-  // New Prayer Module State
   const [articles, setArticles] = useState<Article[]>([]);
   const [userArticleInteractions, setUserArticleInteractions] = useState<UserArticleInteraction[]>([]);
   const [userPrayers, setUserPrayers] = useState<UserPrayer[]>([]);
@@ -72,11 +70,10 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoading(true);
-      // Simulate fetching data
-      await new Promise(resolve => setTimeout(resolve, 700)); // Adjust delay as needed
+      await new Promise(resolve => setTimeout(resolve, 300)); 
 
       setPosts(placeholderPosts);
-      setMembers(placeholderMembers); // Set initial members list
+      setMembers(placeholderMembers); 
       setOldPrayerRequests(placeholderOldPrayerRequests);
       setDailyVerse(placeholderDailyVerse);
       setArticles(placeholderArticles);
@@ -84,7 +81,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       if (authUser) {
         let profile = placeholderMembers.find(m => m.id === authUser.id);
         if (!profile) {
-             // If authUser exists but not in placeholderMembers, create a profile for them.
             profile = {
                 ...authUser,
                 ministry: authUser.ministry || 'General Member',
@@ -92,12 +88,12 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
                 profilePictureUrl: authUser.profilePictureUrl || `https://placehold.co/100x100.png?text=${authUser.displayName.charAt(0)}`,
                 dataAiHint: 'profile person'
             };
-            setMembers(prev => [...prev, profile!]); // Add to members list
+            setMembers(prev => [...prev, profile!]); 
         }
         setCurrentUserProfile(profile);
 
         setUserArticleInteractions(placeholderUserArticleInteractions.filter(interaction => interaction.userId === authUser.id));
-        setUserPrayers(placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id));
+        setUserPrayers(placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setPrayerNotes(placeholderPrayerNotes.filter(note => note.userId === authUser.id));
         setPrayerSessions(placeholderPrayerSessions.filter(session => session.userId === authUser.id));
       } else {
@@ -110,7 +106,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     };
 
-    if (!authLoading) { // Only load data once auth status is determined
+    if (!authLoading) { 
       loadInitialData();
     }
   }, [authUser, authLoading]);
@@ -208,7 +204,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       lastPrayedAt: null,
       isAnswered: false,
     };
-    setUserPrayers(prev => [newUserPrayer, ...prev.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())]);
+    setUserPrayers(prev => [newUserPrayer, ...prev].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
   const updateUserPrayer = (prayerId: string, updates: Partial<Omit<UserPrayer, 'id' | 'userId' | 'createdAt'>>) => {
@@ -233,11 +229,12 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     setUserPrayers(prev => prev.map(p => {
       if (p.id === prayerId && p.userId === currentUserProfile.id) {
         const isCurrentlyAnswered = p.isAnswered;
+        const newAnsweredState = !isCurrentlyAnswered;
         return { 
           ...p, 
-          isAnswered: !isCurrentlyAnswered, // Toggle answered state
-          answeredAt: !isCurrentlyAnswered ? (answerDetails?.date || new Date().toISOString()) : undefined,
-          answerDescription: !isCurrentlyAnswered ? (answerDetails?.description || "Prayer answered!") : undefined,
+          isAnswered: newAnsweredState,
+          answeredAt: newAnsweredState ? (answerDetails?.date || new Date().toISOString()) : undefined,
+          answerDescription: newAnsweredState ? (answerDetails?.description || "Answered!") : undefined,
         };
       }
       return p;
@@ -276,3 +273,4 @@ export const useUserData = () => {
   }
   return context;
 };
+
