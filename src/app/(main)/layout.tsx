@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/auth-context';
 import BottomNavigation from '@/components/layout/bottom-navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { LogOut, Settings, Home, Users, HeartHandshake, UserCircle } from 'lucide-react';
+import { LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -23,6 +23,7 @@ const navItems = [
   { href: '/home', label: 'Home', icon: Home },
   { href: '/directory', label: 'Directory', icon: Users },
   { href: '/prayer', label: 'Prayer Hub', icon: HeartHandshake },
+  { href: '/resources', label: 'Resources', icon: BookOpenText },
 ];
 
 function MainAppLayoutContent({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,5 @@
-import type { UserProfile, Post, Member, PrayerRequest } from '@/types';
+
+import type { UserProfile, Post, Member, PrayerRequest, DailyVerse } from '@/types';
 
 export const placeholderUser: UserProfile = {
   id: 'user1',
@@ -87,3 +88,10 @@ export const placeholderPrayerRequests: PrayerRequest[] = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
   },
 ];
+
+export const placeholderDailyVerse: DailyVerse = {
+  id: 'verse1',
+  reference: 'Proverbs 3:5-6',
+  text: 'Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.',
+  date: new Date().toISOString().split('T')[0], // Today's date
+};

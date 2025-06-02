@@ -1,15 +1,16 @@
 
 "use client";
 
-import type { Post, Member, PrayerRequest, UserProfile } from '@/types';
+import type { Post, Member, PrayerRequest, UserProfile, DailyVerse } from '@/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { placeholderPosts, placeholderMembers, placeholderPrayerRequests, placeholderUser } from '@/lib/placeholder-data';
+import { placeholderPosts, placeholderMembers, placeholderPrayerRequests, placeholderDailyVerse } from '@/lib/placeholder-data';
 import { useAuth } from './auth-context';
 
 interface UserDataContextType {
   posts: Post[];
   members: Member[];
   prayerRequests: PrayerRequest[];
+  dailyVerse: DailyVerse | null;
   currentUserProfile: UserProfile | null;
   addPost: (content: string, imageUrl?: string) => void;
   toggleLikePost: (postId: string) => void;
@@ -25,6 +26,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [posts, setPosts] = useState<Post[]>(placeholderPosts);
   const [members, setMembers] = useState<Member[]>(placeholderMembers);
   const [prayerRequests, setPrayerRequests] = useState<PrayerRequest[]>(placeholderPrayerRequests);
+  const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(placeholderDailyVerse);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -120,7 +122,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserDataContext.Provider value={{ posts, members, prayerRequests, currentUserProfile, addPost, toggleLikePost, addPrayerRequest, updateUserProfile, getMemberById }}>
+    <UserDataContext.Provider value={{ posts, members, prayerRequests, dailyVerse, currentUserProfile, addPost, toggleLikePost, addPrayerRequest, updateUserProfile, getMemberById }}>
       {children}
     </UserDataContext.Provider>
   );

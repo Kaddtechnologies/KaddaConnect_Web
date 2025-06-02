@@ -3,13 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, HeartHandshake, UserCircle } from 'lucide-react';
+import { Home, Users, HeartHandshake, UserCircle, BookOpenText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/home', label: 'Home', icon: Home },
   { href: '/directory', label: 'Directory', icon: Users },
   { href: '/prayer', label: 'Prayer', icon: HeartHandshake },
+  { href: '/resources', label: 'Resources', icon: BookOpenText },
   { href: '/profile', label: 'Profile', icon: UserCircle },
 ];
 
@@ -25,11 +26,11 @@ export default function BottomNavigation() {
             <Link key={item.label} href={item.href} legacyBehavior>
               <a
                 className={cn(
-                  'flex flex-col items-center justify-center text-sm w-full h-full',
+                  'flex flex-col items-center justify-center text-xs w-full h-full px-1 py-1', // Adjusted padding for smaller text
                   isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <item.icon className={cn('h-6 w-6 mb-0.5', isActive ? 'fill-primary/20' : '')} />
+                <item.icon className={cn('h-5 w-5 mb-0.5', isActive ? 'fill-primary/20' : '')} />
                 <span>{item.label}</span>
               </a>
             </Link>
