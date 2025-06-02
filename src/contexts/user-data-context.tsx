@@ -69,6 +69,7 @@ interface UserDataContextType {
   sermons: Sermon[];
   userSermonNotes: SermonNote[];
   getSermonById: (sermonId: string) => Sermon | undefined;
+  addSermon: (sermonData: Omit<Sermon, 'id'>) => void;
   getNotesForSermon: (sermonId: string) => SermonNote[];
   addSermonNote: (sermonId: string, content: string) => void;
   updateSermonNote: (noteId: string, content: string) => void;
@@ -97,7 +98,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [activeChatConversationId, setActiveChatConversationIdState] = useState<string | null>(null);
 
   // Sermon Notes State
-  const [sermons, setSermons] = useState<Sermon[]>([]);
+  const [sermons, setSermonsState] = useState<Sermon[]>([]);
   const [userSermonNotes, setUserSermonNotes] = useState<SermonNote[]>([]);
 
 
@@ -111,7 +112,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       setOldPrayerRequests(placeholderOldPrayerRequests);
       setDailyVerse(placeholderDailyVerse);
       setArticles(placeholderArticles);
-      setSermons(placeholderSermons.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); // Sort sermons by date desc
+      setSermonsState(placeholderSermons.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); // Sort sermons by date desc
       
       if (authUser) {
         let profile = placeholderMembers.find(m => m.id === authUser.id);
@@ -384,6 +385,14 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const getSermonById = useCallback((sermonId: string): Sermon | undefined => {
     return sermons.find(s => s.id === sermonId);
   }, [sermons]);
+  
+  const addSermon = (sermonData: Omit<Sermon, 'id'>) => {
+    const newSermon: Sermon = {
+      ...sermonData,
+      id: `sermon-${Date.now()}`,
+    };
+    setSermonsState(prev => [newSermon, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  };
 
   const getNotesForSermon = useCallback((sermonId: string): SermonNote[] => {
     if (!currentUserProfile) return [];
@@ -433,7 +442,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       chatConversations, activeChatConversationId, setActiveChatConversationId,
       getActiveConversation, saveNewChatConversation, addMessageToChatConversation,
       deleteChatConversation, renameChatConversation,
-      sermons, userSermonNotes, getSermonById, getNotesForSermon,
+      sermons, userSermonNotes, getSermonById, addSermon, getNotesForSermon,
       addSermonNote, updateSermonNote, deleteSermonNote
     }}>
       {children}

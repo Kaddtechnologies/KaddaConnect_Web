@@ -4,20 +4,31 @@
 import { useUserData } from '@/contexts/user-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpenText, Share2, Library, Search, Filter as FilterIcon } from 'lucide-react'; // Added FilterIcon
+import { BookOpenText, Share2, Library, Search, Filter as FilterIcon, PlusCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import SermonCard from '@/components/resources/SermonCard';
-import { useState, useMemo } from 'react';
+import SermonEditorModal from '@/components/resources/SermonEditorModal';
+import type { Sermon } from '@/types';
+import { useState, useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge'; // For topic chips
-import { cn } from '@/lib/utils'; // For conditional classnames
+import { Badge } from '@/components/ui/badge'; 
+import { cn } from '@/lib/utils'; 
 
 export default function ResourcesPage() {
-  const { dailyVerse, sermons: allSermons } = useUserData();
+  const { dailyVerse, sermons: allSermons, addSermon, isLoading: dataLoading, currentUserProfile } = useUserData();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [isSermonEditorOpen, setIsSermonEditorOpen] = useState(false);
+  const [editingSermon, setEditingSermon] = useState<Sermon | null>(null); // For future editing
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    if (!dataLoading) {
+      setPageLoading(false);
+    }
+  },[dataLoading]);
 
   const handleShareVerse = () => {
     if (dailyVerse) {
@@ -58,7 +69,8 @@ export default function ResourcesPage() {
   const filteredSermons = useMemo(() => {
     if (!allSermons) return [];
     
-    let sermonsToFilter = allSermons;
+    let sermonsToFilter = [...allSermons].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
 
     // Filter by selected topics
     if (selectedTopics.length > 0) {
@@ -80,6 +92,30 @@ export default function ResourcesPage() {
     }
     return sermonsToFilter;
   }, [allSermons, searchTerm, selectedTopics]);
+
+  const handleOpenSermonEditor = (sermonToEdit?: Sermon | null) => {
+    setEditingSermon(sermonToEdit || null);
+    setIsSermonEditorOpen(true);
+  };
+
+  const handleSaveSermon = (sermonData: Omit<Sermon, 'id'>) => {
+    // For now, only adding new sermons. Editing would require an updateSermon function.
+    if (!editingSermon) {
+      addSermon(sermonData);
+      toast({ title: "Sermon Added", description: `"${sermonData.title}" has been added.` });
+    } else {
+      // TODO: Implement sermon update logic
+      // updateSermon(editingSermon.id, sermonData);
+      toast({ title: "Sermon Updated", description: `"${sermonData.title}" has been updated.` });
+    }
+    setIsSermonEditorOpen(false);
+    setEditingSermon(null);
+  };
+  
+  if (pageLoading) {
+     return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading resources...</div>;
+  }
+
 
   return (
     <div className="container mx-auto max-w-3xl py-0 md:py-6">
@@ -111,12 +147,20 @@ export default function ResourcesPage() {
       )}
 
       <Card className="mb-8 shadow-xl rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline text-primary flex items-center">
-            <Library className="h-7 w-7 mr-3" />
-            Sermon Archive
-          </CardTitle>
-          <CardDescription>Explore past sermons and take notes.</CardDescription>
+        <CardHeader className="flex flex-row justify-between items-center">
+          <div>
+            <CardTitle className="text-2xl font-headline text-primary flex items-center">
+              <Library className="h-7 w-7 mr-3" />
+              Sermon Archive
+            </CardTitle>
+            <CardDescription>Explore past sermons and take notes.</CardDescription>
+          </div>
+          {currentUserProfile && ( // Only show if user is logged in, adjust based on admin roles if needed
+            <Button onClick={() => handleOpenSermonEditor()} variant="outline" className="text-primary border-primary hover:bg-primary/10">
+              <PlusCircle className="h-5 w-5 mr-2" />
+              Add Sermon
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="relative mb-4">
@@ -175,8 +219,16 @@ export default function ResourcesPage() {
           <p className="text-muted-foreground">Devotionals will be available here soon.</p>
         </CardContent>
       </Card>
+
+      {isSermonEditorOpen && (
+        <SermonEditorModal
+          isOpen={isSermonEditorOpen}
+          onClose={() => { setIsSermonEditorOpen(false); setEditingSermon(null); }}
+          onSave={handleSaveSermon}
+          sermon={editingSermon}
+        />
+      )}
     </div>
   );
 }
-
     
