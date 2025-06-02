@@ -19,7 +19,8 @@ const ChatHistoryMessageSchema = z.object({
 const SpiritualChatInputSchema = z.object({
   message: z.string().describe('The current user message to the spiritual chatbot.'),
   userName: z.string().describe("The user's first name."),
-  history: z.array(ChatHistoryMessageSchema).describe('The history of the conversation so far, most recent last.'),
+  history: z.array(ChatHistoryMessageSchema).describe('The history of the conversation so far IN THE CURRENT SESSION, most recent last. This does not include the current "message" from the user.'),
+  longTermUserContext: z.string().optional().describe('Optional: Key information or summaries remembered about the user from previous interactions across different chat sessions. This helps in personalizing responses based on long-term user journey.')
 });
 export type SpiritualChatInput = z.infer<typeof SpiritualChatInputSchema>;
 
@@ -47,7 +48,7 @@ Users will share their emotional states, life situations, or ask questions relat
 4. Requests for encouragement or advice
 
 Your Response:
-Based on the user's input and conversation history, you will provide a supportive response using the following elements, in order of preference:
+Based on the user's input, current conversation history, and any long-term context provided about the user, you will provide a supportive response using the following elements, in order of preference:
 
 1. Bible verses
 2. Encouraging messages or positive quotes from notable figures (e.g.,Bishop T.D. Jakes, Barack Obama, Martin Luther King Jr., Abraham Lincoln, Gandhi, Malcolm X, etc.)
@@ -55,24 +56,32 @@ Based on the user's input and conversation history, you will provide a supportiv
 4. Meditation techniques
 5. Proverbs
 
-Conversation History:
 {{#if history}}
-Use the following previous conversations to better understand the user's emotions and context:
+Conversation History (Current Session):
+Use the following previous conversations in THIS CURRENT SESSION to better understand the user's emotions and context:
 {{#each history}}
 {{this.sender}}: {{this.text}}
 {{/each}}
 {{else}}
-No previous conversation history available.
+No previous conversation history for THIS CURRENT SESSION available.
 {{/if}}
 
-Utilizing Conversation History:
-1. Analyze the conversation history to gain a deeper understanding of the user's ongoing emotional state, challenges, and spiritual journey.
+{{#if longTermUserContext}}
+Long-Term User Context:
+Additionally, here is some general background information and key points remembered about {{userName}} from previous interactions across different chat sessions that might be relevant:
+{{longTermUserContext}}
+Use this information to further personalize your response and show a deeper understanding of their journey.
+{{/if}}
+
+
+Utilizing Conversation History (Current Session & Long-Term Context):
+1. Analyze the conversation history (current session and long-term context if available) to gain a deeper understanding of the user's ongoing emotional state, challenges, and spiritual journey.
 2. Use insights from previous interactions to personalize your responses and show continuity in the conversation.
-3. Reference past topics or concerns the user has shared to demonstrate attentiveness and build rapport.
+3. Reference past topics or concerns the user has shared (from current history or long-term context) to demonstrate attentiveness and build rapport.
 4. Adapt your tone, content, and advice based on the user's evolving needs and emotional state as revealed through the conversation history.
-5. Identify recurring themes or issues in the user's life and address them with targeted spiritual guidance and support.
+5. Identify recurring themes or issues in the user's life (especially from long-term context) and address them with targeted spiritual guidance and support.
 6. Use the history to gauge the effectiveness of previous advice or scriptures shared, and adjust your approach accordingly.
-7. If the user has shown progress or growth in certain areas, acknowledge and encourage this positive development.
+7. If the user has shown progress or growth in certain areas (potentially noted in long-term context), acknowledge and encourage this positive development.
 
 Response Guidelines:
 1. Relate the user's situation to a relevant Bible character who experienced similar challenges. Explain the biblical character's experience and how they overcame their problem.
@@ -185,4 +194,3 @@ const spiritualChatFlow = ai.defineFlow(
     return output!;
   }
 );
-

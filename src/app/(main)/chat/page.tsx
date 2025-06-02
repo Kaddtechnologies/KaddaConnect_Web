@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, MessageCircle, Bot, User, AlertTriangle, Loader2, Menu, PlusCircle, Trash2, Edit3, Save } from 'lucide-react';
+import { Send, MessageCircle, Bot, User, AlertTriangle, Loader2, Menu, PlusCircle, Trash2, Edit3 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/auth-context';
@@ -52,7 +52,7 @@ export default function ChatPage() {
         const headerHeight = window.innerWidth < 768 ? (document.querySelector('.md\\:hidden.sticky.top-0')?.clientHeight || 64) : (document.querySelector('.hidden.md\\:flex.sticky.top-0')?.clientHeight || 64);
         const bottomNavHeight = window.innerWidth < 768 ? (document.querySelector('nav.fixed.bottom-0')?.clientHeight || 64) : 0;
         const viewportHeight = window.innerHeight;
-        const pagePadding = window.innerWidth < 768 ? 24 : 48;
+        const pagePadding = window.innerWidth < 768 ? 24 : 48; // p-3 md:p-6 -> 12px or 24px on each side
         const availableHeight = viewportHeight - headerHeight - bottomNavHeight - pagePadding;
         setChatContainerHeight(`${Math.max(300, availableHeight)}px`);
       }
@@ -78,13 +78,11 @@ export default function ChatPage() {
         setMessages(activeConvo.messages);
         setCurrentConversationTitle(activeConvo.title);
       } else {
-        // Active ID is set, but convo not found (e.g. after deletion)
-        setActiveChatConversationId(null); // Reset to new chat
+        setActiveChatConversationId(null); 
         setMessages([]);
         setCurrentConversationTitle("New Chat");
       }
     } else {
-      // No active conversation ID, means it's a new chat
       setMessages([]);
       setCurrentConversationTitle("New Chat");
     }
@@ -102,11 +100,19 @@ export default function ChatPage() {
     };
     
     const updatedMessagesWithUser = [...messages, userMessage];
-    setMessages(updatedMessagesWithUser); // Update local UI immediately
+    setMessages(updatedMessagesWithUser);
     setInputValue('');
     setIsLoadingResponse(true);
 
-    // Add placeholder for bot message
+    // If this is the first message in a new chat, save it automatically.
+    let currentConvoId = activeChatConversationId;
+    if (!currentConvoId && updatedMessagesWithUser.length === 1) {
+        const autoTitle = userMessage.text.split(' ').slice(0, 5).join(' ') + (userMessage.text.split(' ').length > 5 ? '...' : '');
+        currentConvoId = saveNewChatConversation([userMessage], autoTitle); // Save with just the user message initially
+        // The bot's response will be added to this newly created conversation.
+    }
+
+
     const botMessageId = `msg-${Date.now() + 1}`;
     const messagesWithBotLoading = [
       ...updatedMessagesWithUser,
@@ -127,10 +133,15 @@ export default function ChatPage() {
         text: msg.text,
       }));
       
+      // TODO: Call a Genkit flow here to retrieve long-term user context from Pinecone
+      // const longTermContextData = await retrieveUserMemoryFlow({ userId: currentUser.id, currentQuery: messageText });
+      const longTermContextData = ""; // Placeholder for now
+
       const response = await askSpiritualChatbot({ 
         message: messageText,
         userName: currentUser.displayName.split(' ')[0] || currentUser.displayName,
-        history: historyForFlow.slice(0, -1) 
+        history: historyForFlow.slice(0, -1), // Pass history *before* current user message
+        longTermUserContext: longTermContextData
       });
 
       const botMessage: ChatMessage = {
@@ -143,11 +154,14 @@ export default function ChatPage() {
       const finalMessages = [...updatedMessagesWithUser, botMessage];
       setMessages(finalMessages);
 
-      if (activeChatConversationId) {
-        addMessageToChatConversation(activeChatConversationId, userMessage);
-        addMessageToChatConversation(activeChatConversationId, botMessage);
+      if (currentConvoId) { // This will be set if it was a new chat or an existing one
+        if (updatedMessagesWithUser.length === 1) { // First user message was just sent
+             addMessageToChatConversation(currentConvoId, botMessage); // Bot message for the auto-saved convo
+        } else {
+            addMessageToChatConversation(currentConvoId, userMessage);
+            addMessageToChatConversation(currentConvoId, botMessage);
+        }
       }
-      // If it's a new chat, messages are accumulating locally until saved.
 
     } catch (error) {
       console.error("Error getting bot response:", error);
@@ -160,9 +174,13 @@ export default function ChatPage() {
       };
       const finalMessagesWithError = [...updatedMessagesWithUser, errorBotMessage];
       setMessages(finalMessagesWithError);
-       if (activeChatConversationId) {
-        addMessageToChatConversation(activeChatConversationId, userMessage);
-        addMessageToChatConversation(activeChatConversationId, errorBotMessage);
+       if (currentConvoId) {
+         if (updatedMessagesWithUser.length === 1) {
+             addMessageToChatConversation(currentConvoId, errorBotMessage);
+         } else {
+            addMessageToChatConversation(currentConvoId, userMessage);
+            addMessageToChatConversation(currentConvoId, errorBotMessage);
+         }
       }
     } finally {
       setIsLoadingResponse(false);
@@ -181,45 +199,19 @@ export default function ChatPage() {
     setIsSheetOpen(false);
   };
 
-  const handleSaveCurrentChat = () => {
-    if (!currentUser) {
-      toast({ title: "Error", description: "You must be logged in to save a chat.", variant: "destructive" });
-      return;
-    }
-    if (messages.length === 0) {
-      toast({ title: "Cannot Save", description: "Chat is empty.", variant: "destructive" });
-      return;
-    }
-    if (activeChatConversationId) { // Already saved, just a "checkpoint"
-        toast({ title: "Chat Updated", description: "Conversation progress saved." });
-        // Messages are already being added to active convo, so this is more like a sync point if needed
-        // Or, if we weren't auto-saving messages to active convo, this is where we'd do it.
-        // For now, this path might not be strictly necessary if messages are auto-added.
-        return;
-    }
-
-    let title = prompt("Enter a title for this chat:", messages[0]?.text.substring(0, 30) || "New Chat");
-    if (title === null) return; // User cancelled prompt
-    title = title.trim() ||  messages[0]?.text.substring(0, 30) || "New Chat";
-
-    const newConvoId = saveNewChatConversation(messages, title);
-    setCurrentConversationTitle(title);
-    toast({ title: "Chat Saved", description: `Conversation "${title}" has been saved.` });
-  };
-
   const handleDeleteSelectedConversation = (conversationId: string, conversationTitle: string) => {
     if (window.confirm(`Are you sure you want to delete the chat "${conversationTitle}"?`)) {
       deleteChatConversation(conversationId);
       toast({ title: "Chat Deleted", description: `"${conversationTitle}" has been removed.`, variant: "destructive" });
        if (activeChatConversationId === conversationId) {
-         handleNewChat(); // Go to a new chat state
+         handleNewChat(); 
        }
     }
   };
 
   const handleRenameSelectedConversation = (conversationId: string, currentTitle: string) => {
     let newTitle = prompt("Enter new title for the chat:", currentTitle);
-    if (newTitle === null) return; // User cancelled
+    if (newTitle === null) return; 
     newTitle = newTitle.trim();
     if (newTitle && newTitle !== currentTitle) {
       renameChatConversation(conversationId, newTitle);
@@ -320,15 +312,8 @@ export default function ChatPage() {
                 <p className="text-xs text-muted-foreground">Your companion for spiritual encouragement.</p>
             </div>
           </div>
-           <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleSaveCurrentChat}
-              disabled={isLoadingResponse || messages.length === 0 || !!activeChatConversationId}
-              className={`${activeChatConversationId ? 'invisible' : ''}`} // Hide if already saved
-            >
-              <Save className="h-4 w-4 mr-2" /> Save
-            </Button>
+           {/* The Save button is removed from here as saving is automatic after first message */}
+           <div className="w-10"></div> {/* Placeholder for spacing if needed */}
         </CardHeader>
         
         <ScrollArea ref={scrollAreaRef} className="flex-grow p-4 space-y-4 bg-muted/20">

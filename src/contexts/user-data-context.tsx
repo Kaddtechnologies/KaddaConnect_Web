@@ -58,7 +58,7 @@ interface UserDataContextType {
   activeChatConversationId: string | null;
   setActiveChatConversationId: (conversationId: string | null) => void;
   getActiveConversation: () => ChatConversation | undefined;
-  saveNewChatConversation: (messages: ChatMessage[], title?: string) => string; // Returns new conversation ID
+  saveNewChatConversation: (messages: ChatMessage[], title?: string, existingConvoId?: string | null) => string; // Returns new conversation ID
   addMessageToChatConversation: (conversationId: string, message: ChatMessage) => void;
   deleteChatConversation: (conversationId: string) => void;
   renameChatConversation: (conversationId: string, newTitle: string) => void;
@@ -90,6 +90,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoading(true);
+      // Simulate data fetching delay
+      // In a real app, this would be Firebase listeners or API calls
       await new Promise(resolve => setTimeout(resolve, 300)); 
 
       setPosts(placeholderPosts);
@@ -101,6 +103,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       if (authUser) {
         let profile = placeholderMembers.find(m => m.id === authUser.id);
         if (!profile) {
+            // If user from auth doesn't exist in placeholder members, create a basic profile
             profile = {
                 ...authUser,
                 ministry: authUser.ministry || 'General Member',
@@ -111,6 +114,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         }
         setCurrentUserProfile(profile);
 
+        // Filter data specific to the authenticated user
         setUserArticleInteractions(placeholderUserArticleInteractions.filter(interaction => interaction.userId === authUser.id));
         setUserPrayers(placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setPrayerNotes(placeholderPrayerNotes.filter(note => note.userId === authUser.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
@@ -121,6 +125,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         setActiveChatConversationIdState(null); // Start with no active chat selected
 
       } else {
+        // Clear user-specific data if no authenticated user
         setCurrentUserProfile(null);
         setUserArticleInteractions([]);
         setUserPrayers([]);
@@ -132,12 +137,12 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     };
 
-    if (!authLoading) {
+    if (!authLoading) { // Only load data once auth status is determined
       loadInitialData();
     }
-  }, [authUser, authLoading]);
+  }, [authUser, authLoading]); // Depend on authUser and authLoading
 
-
+  // --- Existing Functions (Posts, Profile, etc.) ---
   const addPost = (content: string, imageUrl?: string) => {
     if (!currentUserProfile) return;
     const newPost: Post = {
@@ -183,9 +188,11 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     if (!currentUserProfile) return;
     const updatedProfile = { ...currentUserProfile, ...updatedProfileData };
     setCurrentUserProfile(updatedProfile);
+    // Update the members list as well
     setMembers(prevMembers => 
       prevMembers.map(member => member.id === currentUserProfile.id ? updatedProfile : member)
     );
+    // If display name or picture changes, update posts by this author
     if (updatedProfileData.displayName || updatedProfileData.profilePictureUrl) {
         setPosts(prevPosts => prevPosts.map(p => {
             if (p.author.id === currentUserProfile.id) {
@@ -213,6 +220,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           : fav
         );
       }
+      // If no existing interaction, add a new one
       return [...prev, { userId: currentUserProfile.id, articleId, isFavorited: true, favoritedAt: new Date().toISOString() }];
     });
   };
@@ -231,7 +239,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       createdAt: new Date().toISOString(),
       lastPrayedAt: null,
       isAnswered: false,
-      notes: [],
+      notes: [], // Initialize with empty notes array
     };
     setUserPrayers(prev => [newUserPrayer, ...prev].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
@@ -244,6 +252,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteUserPrayer = (prayerId: string) => {
     if (!currentUserProfile) return;
+    // Also delete associated notes for this prayer
     setPrayerNotes(prev => prev.filter(note => !(note.prayerId === prayerId && note.userId === currentUserProfile.id)));
     setUserPrayers(prev => prev.filter(p => !(p.id === prayerId && p.userId === currentUserProfile.id)));
   };
@@ -264,6 +273,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           isAnswered: newAnsweredState,
           answeredAt: newAnsweredState ? (answerDetails?.date || new Date().toISOString()) : undefined,
           answerDescription: newAnsweredState ? (answerDetails?.description || (isCurrentlyAnswered ? undefined : "Answered!")) : undefined, 
+          // Keep existing notes, don't clear them when marking answered/unanswered
         };
       }
       return p;
@@ -313,22 +323,40 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getActiveConversation = useCallback((): ChatConversation | undefined => {
+    if (!activeChatConversationId) return undefined;
     return chatConversations.find(convo => convo.id === activeChatConversationId);
   }, [chatConversations, activeChatConversationId]);
 
-  const saveNewChatConversation = (messagesToSave: ChatMessage[], title?: string): string => {
+  const saveNewChatConversation = (messagesToSave: ChatMessage[], title?: string, existingConvoId: string | null = null): string => {
     if (!currentUserProfile) throw new Error("User not authenticated");
-    const newConversation: ChatConversation = {
-      id: `chatconvo-${Date.now()}`,
-      userId: currentUserProfile.id,
-      title: title || messagesToSave[0]?.text.substring(0, 30) || "New Chat",
-      messages: messagesToSave,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setChatConversations(prev => [newConversation, ...prev].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
-    setActiveChatConversationIdState(newConversation.id);
-    return newConversation.id;
+
+    if (existingConvoId) {
+      // This case is for updating an existing "new chat" that has been given an ID but might not be fully "saved" yet.
+      // Or, if we decide to "checkpoint" save. For now, direct updates happen via addMessageToChatConversation.
+      // This logic might be simplified if auto-save is robust.
+      setChatConversations(prev =>
+        prev.map(convo =>
+          convo.id === existingConvoId
+            ? { ...convo, messages: messagesToSave, title: title || convo.title, updatedAt: new Date().toISOString() }
+            : convo
+        ).sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      );
+      return existingConvoId;
+    } else {
+      // Creating a brand new conversation
+      const conversationTitle = title || (messagesToSave.find(m => m.sender === 'user')?.text.substring(0, 40) + "...") || "New Chat";
+      const newConversation: ChatConversation = {
+        id: `chatconvo-${Date.now()}`,
+        userId: currentUserProfile.id,
+        title: conversationTitle,
+        messages: messagesToSave,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setChatConversations(prev => [newConversation, ...prev].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      setActiveChatConversationIdState(newConversation.id); // Make the new chat active
+      return newConversation.id;
+    }
   };
 
   const addMessageToChatConversation = (conversationId: string, message: ChatMessage) => {
@@ -344,7 +372,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const deleteChatConversation = (conversationId: string) => {
     setChatConversations(prev => prev.filter(convo => convo.id !== conversationId));
     if (activeChatConversationId === conversationId) {
-      setActiveChatConversationIdState(null); // Or to the next/previous conversation
+      setActiveChatConversationIdState(null); 
     }
   };
 
