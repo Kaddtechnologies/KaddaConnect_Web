@@ -1,9 +1,6 @@
 
 "use client";
 
-// Placeholder component - actual filtering logic might be in the parent page
-// or this component could be made more interactive.
-
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -19,17 +16,17 @@ export default function CategoryChips({ categories, selectedCategories, onToggle
   }
 
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
+    <div className="flex flex-wrap gap-2">
       {categories.map(category => (
         <Badge
           key={category}
           variant={selectedCategories.includes(category) ? "default" : "secondary"}
           onClick={() => onToggleCategory(category)}
           className={cn(
-            "cursor-pointer transition-all",
+            "cursor-pointer transition-all px-3 py-1.5 text-sm rounded-full shadow-sm",
             selectedCategories.includes(category) 
-              ? "bg-primary text-primary-foreground" 
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+              : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
           )}
         >
           {category}

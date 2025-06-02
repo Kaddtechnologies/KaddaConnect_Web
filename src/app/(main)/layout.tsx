@@ -1,12 +1,12 @@
 
 "use client";
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import BottomNavigation from '@/components/layout/bottom-navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle } from 'lucide-react';
+import { LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -31,6 +31,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading, logout } = useAuth();
+  const [isDarkTheme, setIsDarkTheme] = useState(true); // Default to dark
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -38,14 +39,40 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, router]);
 
+  // Handle theme preference
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('kaddaconnect-theme');
+    if (storedTheme) {
+      const newTheme = storedTheme === 'dark';
+      setIsDarkTheme(newTheme);
+      document.documentElement.classList.toggle('dark', newTheme);
+      document.documentElement.classList.toggle('light', !newTheme);
+    } else {
+      // Default to system preference or dark
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setIsDarkTheme(prefersDark);
+      document.documentElement.classList.toggle('dark', prefersDark);
+      document.documentElement.classList.toggle('light', !prefersDark);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newThemeIsDark = !isDarkTheme;
+    setIsDarkTheme(newThemeIsDark);
+    localStorage.setItem('kaddaconnect-theme', newThemeIsDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newThemeIsDark);
+    document.documentElement.classList.toggle('light', !newThemeIsDark);
+  };
+
+
   if (isLoading || (!isLoading && !user)) {
     return (
-      <div className="flex flex-col h-screen">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-8 w-8 rounded-full" />
+      <div className="flex flex-col h-screen bg-background">
+        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+          <Skeleton className="h-8 w-32 bg-muted" />
+          <Skeleton className="h-8 w-8 rounded-full bg-muted" />
         </header>
-        <div className="flex flex-1 flex-col items-center justify-center bg-background p-6">
+        <div className="flex flex-1 flex-col items-center justify-center p-6">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
           <p className="text-muted-foreground">Authenticating...</p>
         </div>
@@ -59,44 +86,57 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Desktop Header */}
-      <header className="sticky top-0 z-40 hidden md:flex h-16 items-center gap-4 border-b bg-card px-6">
+      <header className="sticky top-0 z-40 hidden md:flex h-16 items-center gap-4 border-b border-border bg-card px-6">
         <Link href="/home" className="flex items-center gap-2 font-semibold text-primary">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
-          <span className="font-headline">KaddaConnect</span>
+          <span className="font-headline text-xl">KaddaConnect</span>
         </Link>
-        <nav className="flex-1_hidden md:flex flex-row items-center gap-5 text-sm font-medium ml-6">
+        <nav className="flex-1_hidden md:flex flex-row items-center gap-5 text-sm font-medium ml-8">
           {navItems.map(item => (
             <Link
               key={item.label}
               href={item.href}
-              className={`transition-colors hover:text-foreground ${pathname === item.href ? 'text-foreground' : 'text-muted-foreground'}`}
+              className={`transition-colors hover:text-primary ${pathname.startsWith(item.href) ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="rounded-full">
+            {isDarkTheme ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar>
-                  <AvatarImage src={user?.profilePictureUrl} alt={user?.displayName} data-ai-hint="profile person" />
-                  <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+              <Button variant="ghost" size="icon" className="rounded-full border-2 border-transparent hover:border-primary/50">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
+                  <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user?.displayName}</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.displayName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profile">
+                <Link href="/profile" className="cursor-pointer">
                   <UserCircle className="mr-2 h-4 w-4" />
                   Profile
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout}>
+               <DropdownMenuItem disabled className="cursor-not-allowed">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings (soon)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
@@ -106,18 +146,25 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="flex-grow pb-20 md:pb-0 md:pt-0">
-        {/* Mobile Header (placeholder, actual content driven by pages) */}
-        <div className="md:hidden sticky top-0 z-30 flex items-center justify-between h-16 bg-card px-4 border-b">
+        {/* Mobile Header */}
+        <div className="md:hidden sticky top-0 z-30 flex items-center justify-between h-16 bg-card px-4 border-b border-border">
             <Link href="/home" className="flex items-center gap-2 font-semibold text-primary">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
-              <span className="font-headline">KaddaConnect</span>
+              <span className="font-headline text-lg">KaddaConnect</span>
             </Link>
-            <Avatar>
-              <AvatarImage src={user?.profilePictureUrl} alt={user?.displayName} data-ai-hint="profile person" />
-              <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="rounded-full h-9 w-9">
+                 {isDarkTheme ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <Link href="/profile">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
+                  <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </Link>
+            </div>
         </div>
-        <div className="p-4 md:p-6">{children}</div>
+        <div className="p-3 md:p-6">{children}</div>
       </main>
       <BottomNavigation />
     </div>
@@ -128,12 +175,12 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
 export default function MainAppLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={
-      <div className="flex flex-col h-screen">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-8 w-8 rounded-full" />
+      <div className="flex flex-col h-screen bg-background">
+        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+          <Skeleton className="h-8 w-32 bg-muted" />
+          <Skeleton className="h-8 w-8 rounded-full bg-muted" />
         </header>
-        <div className="flex flex-1 flex-col items-center justify-center bg-background p-6">
+        <div className="flex flex-1 flex-col items-center justify-center p-6">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
           <p className="text-muted-foreground">Loading KaddaConnect...</p>
         </div>

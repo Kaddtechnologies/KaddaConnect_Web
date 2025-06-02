@@ -16,14 +16,14 @@ export default function SearchBar({
   placeholder = "Search..." 
 }: SearchBarProps) {
   return (
-    <div className="relative w-full mb-4">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+    <div className="relative w-full">
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
       <Input
         type="search"
         placeholder={placeholder}
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="pl-10 pr-4 py-3 text-base rounded-lg shadow-sm bg-card text-card-foreground"
+        className="pl-11 pr-4 py-3 text-base rounded-lg shadow-sm bg-input text-foreground border-border focus:ring-2 focus:ring-primary"
       />
     </div>
   );

@@ -10,7 +10,7 @@ import {
   placeholderDailyVerse,
   placeholderArticles,
   placeholderUserArticleInteractions,
-  placeholderUserPrayers,
+  placeholderUserPrayers, // Ensure this provides initial prayers for the logged-in user or is empty
   placeholderPrayerNotes,
   placeholderPrayerSessions
 } from '@/lib/placeholder-data';
@@ -20,93 +20,100 @@ interface UserDataContextType {
   // Existing data
   posts: Post[];
   members: Member[];
-  oldPrayerRequests: OldPrayerRequest[]; // Keep for now if any part of app still uses it, or phase out
+  oldPrayerRequests: OldPrayerRequest[];
   dailyVerse: DailyVerse | null;
   currentUserProfile: UserProfile | null;
+  isLoading: boolean; // Added isLoading state
   addPost: (content: string, imageUrl?: string) => void;
   toggleLikePost: (postId: string) => void;
-  addOldPrayerRequest: (requestText: string) => void; // To be replaced
+  addOldPrayerRequest: (requestText: string) => void;
   updateUserProfile: (updatedProfileData: Partial<UserProfile>) => void;
   getMemberById: (id: string) => Member | undefined;
 
-  // New Prayer Module Data
+  // Prayer Module Data
   articles: Article[];
   userArticleInteractions: UserArticleInteraction[];
   userPrayers: UserPrayer[];
   prayerNotes: PrayerNote[];
   prayerSessions: PrayerSession[];
 
-  // New Prayer Module Functions
+  // Prayer Module Functions
   toggleFavoriteArticle: (articleId: string) => void;
   isArticleFavorited: (articleId: string) => boolean;
   
   addUserPrayer: (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt' | 'isAnswered' | 'answeredAt' | 'answerDescription'>) => void;
-  updateUserPrayer: (prayerId: string, updates: Partial<UserPrayer>) => void;
+  updateUserPrayer: (prayerId: string, updates: Partial<Omit<UserPrayer, 'id' | 'userId' | 'createdAt'>>) => void;
   deleteUserPrayer: (prayerId: string) => void;
   markPrayerAsPrayed: (prayerId: string) => void;
   markPrayerAsAnswered: (prayerId: string, answerDetails?: { description?: string; date?: string }) => void;
   addPrayerNote: (prayerId: string, noteText: string) => void;
-  // getPrayerNotes: (prayerId: string) => PrayerNote[];
-  // addPrayerSession: (sessionData: Omit<PrayerSession, 'id' | 'userId'>) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
 
 export const UserDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   
   // Existing state
-  const [posts, setPosts] = useState<Post[]>(placeholderPosts);
-  const [members, setMembers] = useState<Member[]>(placeholderMembers);
-  const [oldPrayerRequests, setOldPrayerRequests] = useState<OldPrayerRequest[]>(placeholderOldPrayerRequests);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [oldPrayerRequests, setOldPrayerRequests] = useState<OldPrayerRequest[]>([]);
   const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
 
   // New Prayer Module State
-  const [articles, setArticles] = useState<Article[]>(placeholderArticles);
-  const [userArticleInteractions, setUserArticleInteractions] = useState<UserArticleInteraction[]>(placeholderUserArticleInteractions);
-  const [userPrayers, setUserPrayers] = useState<UserPrayer[]>(placeholderUserPrayers);
-  const [prayerNotes, setPrayerNotes] = useState<PrayerNote[]>(placeholderPrayerNotes);
-  const [prayerSessions, setPrayerSessions] = useState<PrayerSession[]>(placeholderPrayerSessions);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [userArticleInteractions, setUserArticleInteractions] = useState<UserArticleInteraction[]>([]);
+  const [userPrayers, setUserPrayers] = useState<UserPrayer[]>([]);
+  const [prayerNotes, setPrayerNotes] = useState<PrayerNote[]>([]);
+  const [prayerSessions, setPrayerSessions] = useState<PrayerSession[]>([]);
 
   useEffect(() => {
-    if (authUser) {
-      const profile = members.find(m => m.id === authUser.id);
-      if (profile) {
-        setCurrentUserProfile(profile);
-      } else {
-        const newMemberProfile: Member = {
-            ...authUser,
-            ministry: authUser.ministry || 'General Member',
-            interests: authUser.interests || [],
-            profilePictureUrl: authUser.profilePictureUrl || 'https://placehold.co/100x100.png',
-        };
-        setMembers(prev => [...prev, newMemberProfile]);
-        setCurrentUserProfile(newMemberProfile);
-      }
-      // Filter data specific to current user for new prayer module
-      setUserArticleInteractions(prev => placeholderUserArticleInteractions.filter(interaction => interaction.userId === authUser.id));
-      setUserPrayers(prev => placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id));
-      setPrayerNotes(prev => placeholderPrayerNotes.filter(note => note.userId === authUser.id));
-      setPrayerSessions(prev => placeholderPrayerSessions.filter(session => session.userId === authUser.id));
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      // Simulate fetching data
+      await new Promise(resolve => setTimeout(resolve, 700)); // Adjust delay as needed
 
-    } else {
-      setCurrentUserProfile(null);
-      // Clear user-specific data on logout
-      setUserArticleInteractions([]);
-      setUserPrayers([]);
-      setPrayerNotes([]);
-      setPrayerSessions([]);
-    }
-  }, [authUser, members]); // Removed other state dependencies to avoid re-filtering on every change
-
-  useEffect(() => {
-    const fetchDailyVerse = async () => {
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+      setPosts(placeholderPosts);
+      setMembers(placeholderMembers); // Set initial members list
+      setOldPrayerRequests(placeholderOldPrayerRequests);
       setDailyVerse(placeholderDailyVerse);
+      setArticles(placeholderArticles);
+      
+      if (authUser) {
+        let profile = placeholderMembers.find(m => m.id === authUser.id);
+        if (!profile) {
+             // If authUser exists but not in placeholderMembers, create a profile for them.
+            profile = {
+                ...authUser,
+                ministry: authUser.ministry || 'General Member',
+                interests: authUser.interests || [],
+                profilePictureUrl: authUser.profilePictureUrl || `https://placehold.co/100x100.png?text=${authUser.displayName.charAt(0)}`,
+                dataAiHint: 'profile person'
+            };
+            setMembers(prev => [...prev, profile!]); // Add to members list
+        }
+        setCurrentUserProfile(profile);
+
+        setUserArticleInteractions(placeholderUserArticleInteractions.filter(interaction => interaction.userId === authUser.id));
+        setUserPrayers(placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id));
+        setPrayerNotes(placeholderPrayerNotes.filter(note => note.userId === authUser.id));
+        setPrayerSessions(placeholderPrayerSessions.filter(session => session.userId === authUser.id));
+      } else {
+        setCurrentUserProfile(null);
+        setUserArticleInteractions([]);
+        setUserPrayers([]);
+        setPrayerNotes([]);
+        setPrayerSessions([]);
+      }
+      setIsLoading(false);
     };
-    fetchDailyVerse();
-  }, []);
+
+    if (!authLoading) { // Only load data once auth status is determined
+      loadInitialData();
+    }
+  }, [authUser, authLoading]);
 
 
   const addPost = (content: string, imageUrl?: string) => {
@@ -137,7 +144,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // To be replaced by new prayer system
   const addOldPrayerRequest = (requestText: string) => {
     if (!currentUserProfile) return;
     const newPrayerRequest: OldPrayerRequest = {
@@ -172,8 +178,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     return members.find(member => member.id === id);
   };
 
-  // --- New Prayer Module Functions ---
-
   const toggleFavoriteArticle = (articleId: string) => {
     if (!currentUserProfile) return;
     setUserArticleInteractions(prev => {
@@ -204,18 +208,19 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       lastPrayedAt: null,
       isAnswered: false,
     };
-    setUserPrayers(prev => [newUserPrayer, ...prev]);
+    setUserPrayers(prev => [newUserPrayer, ...prev.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())]);
   };
 
-  const updateUserPrayer = (prayerId: string, updates: Partial<UserPrayer>) => {
+  const updateUserPrayer = (prayerId: string, updates: Partial<Omit<UserPrayer, 'id' | 'userId' | 'createdAt'>>) => {
     if (!currentUserProfile) return;
-    setUserPrayers(prev => prev.map(p => p.id === prayerId && p.userId === currentUserProfile.id ? { ...p, ...updates } : p));
+    setUserPrayers(prev => prev.map(p => p.id === prayerId && p.userId === currentUserProfile.id ? { ...p, ...updates } : p)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
   const deleteUserPrayer = (prayerId: string) => {
     if (!currentUserProfile) return;
     setUserPrayers(prev => prev.filter(p => !(p.id === prayerId && p.userId === currentUserProfile.id)));
-    setPrayerNotes(prev => prev.filter(note => note.prayerId !== prayerId)); // Also delete associated notes
+    setPrayerNotes(prev => prev.filter(note => !(note.prayerId === prayerId && note.userId === currentUserProfile.id)));
   };
 
   const markPrayerAsPrayed = (prayerId: string) => {
@@ -225,12 +230,18 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   
   const markPrayerAsAnswered = (prayerId: string, answerDetails?: { description?: string; date?: string }) => {
     if (!currentUserProfile) return;
-    setUserPrayers(prev => prev.map(p => p.id === prayerId && p.userId === currentUserProfile.id ? { 
-      ...p, 
-      isAnswered: true, 
-      answeredAt: answerDetails?.date || new Date().toISOString(),
-      answerDescription: answerDetails?.description || p.answerDescription 
-    } : p));
+    setUserPrayers(prev => prev.map(p => {
+      if (p.id === prayerId && p.userId === currentUserProfile.id) {
+        const isCurrentlyAnswered = p.isAnswered;
+        return { 
+          ...p, 
+          isAnswered: !isCurrentlyAnswered, // Toggle answered state
+          answeredAt: !isCurrentlyAnswered ? (answerDetails?.date || new Date().toISOString()) : undefined,
+          answerDescription: !isCurrentlyAnswered ? (answerDetails?.description || "Prayer answered!") : undefined,
+        };
+      }
+      return p;
+    }));
   };
 
   const addPrayerNote = (prayerId: string, noteText: string) => {
@@ -247,7 +258,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <UserDataContext.Provider value={{ 
-      posts, members, oldPrayerRequests, dailyVerse, currentUserProfile, 
+      posts, members, oldPrayerRequests, dailyVerse, currentUserProfile, isLoading,
       addPost, toggleLikePost, addOldPrayerRequest, updateUserProfile, getMemberById,
       articles, userArticleInteractions, userPrayers, prayerNotes, prayerSessions,
       toggleFavoriteArticle, isArticleFavorited,

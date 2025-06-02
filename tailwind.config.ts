@@ -1,16 +1,25 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
-  darkMode: ['class'],
+  darkMode: ['class'], // Enable class-based dark mode
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1rem',
+        sm: '1.5rem',
+        lg: '2rem',
+      },
+    },
     extend: {
       fontFamily: {
-        body: ['Libre Baskerville', 'serif'],
+        body: ['Inter', 'sans-serif'], // Changed to Inter for body text
         headline: ['Libre Baskerville', 'serif'],
         code: ['monospace'],
       },
@@ -67,6 +76,7 @@ export default {
         },
       },
       borderRadius: {
+        xl: 'calc(var(--radius) + 4px)', // Added for more rounded elements
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
@@ -88,12 +98,20 @@ export default {
             height: '0',
           },
         },
+        'fadeIn': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'fadeIn': 'fadeIn 0.5s ease-out forwards',
       },
+      boxShadow: {
+        'inner-lg': 'inset 0 2px 10px 0 rgb(0 0 0 / 0.15)',
+      }
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 } satisfies Config;
