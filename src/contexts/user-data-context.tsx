@@ -46,7 +46,9 @@ interface UserDataContextType {
   deleteUserPrayer: (prayerId: string) => void;
   markPrayerAsPrayed: (prayerId: string) => void;
   markPrayerAsAnswered: (prayerId: string, answerDetails?: { description?: string; date?: string }) => void;
+  
   addPrayerNote: (prayerId: string, noteText: string) => void;
+  getNotesForPrayer: (prayerId: string) => PrayerNote[];
 }
 
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
@@ -94,7 +96,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
         setUserArticleInteractions(placeholderUserArticleInteractions.filter(interaction => interaction.userId === authUser.id));
         setUserPrayers(placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        setPrayerNotes(placeholderPrayerNotes.filter(note => note.userId === authUser.id));
+        setPrayerNotes(placeholderPrayerNotes.filter(note => note.userId === authUser.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setPrayerSessions(placeholderPrayerSessions.filter(session => session.userId === authUser.id));
       } else {
         setCurrentUserProfile(null);
@@ -234,7 +236,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           ...p, 
           isAnswered: newAnsweredState,
           answeredAt: newAnsweredState ? (answerDetails?.date || new Date().toISOString()) : undefined,
-          answerDescription: newAnsweredState ? (answerDetails?.description || "Answered!") : undefined,
+          answerDescription: newAnsweredState ? (answerDetails?.description || (isCurrentlyAnswered ? undefined : "Answered!")) : undefined, // Clear description if unmarking
         };
       }
       return p;
@@ -250,8 +252,15 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       text: noteText,
       createdAt: new Date().toISOString(),
     };
-    setPrayerNotes(prev => [newNote, ...prev]);
+    setPrayerNotes(prev => [newNote, ...prev].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
+  
+  const getNotesForPrayer = (prayerId: string): PrayerNote[] => {
+    if (!currentUserProfile) return [];
+    return prayerNotes.filter(note => note.prayerId === prayerId && note.userId === currentUserProfile.id)
+                      .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
 
   return (
     <UserDataContext.Provider value={{ 
@@ -259,7 +268,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       addPost, toggleLikePost, addOldPrayerRequest, updateUserProfile, getMemberById,
       articles, userArticleInteractions, userPrayers, prayerNotes, prayerSessions,
       toggleFavoriteArticle, isArticleFavorited,
-      addUserPrayer, updateUserPrayer, deleteUserPrayer, markPrayerAsPrayed, markPrayerAsAnswered, addPrayerNote
+      addUserPrayer, updateUserPrayer, deleteUserPrayer, markPrayerAsPrayed, markPrayerAsAnswered, 
+      addPrayerNote, getNotesForPrayer
     }}>
       {children}
     </UserDataContext.Provider>

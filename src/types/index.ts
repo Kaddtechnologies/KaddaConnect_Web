@@ -97,3 +97,8 @@ export interface PrayerSession {
   prayerIds?: string[]; // Optional: specific prayers included in this session
   notes?: string; // General notes for the session
 }
+
+// Type for the new AnswerDetailsModal
+export interface AnswerDetails {
+  description: string;
+}

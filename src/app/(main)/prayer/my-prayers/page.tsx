@@ -4,16 +4,26 @@
 import { useState, useEffect } from 'react';
 import { useUserData } from '@/contexts/user-data-context';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ListChecks, Sparkles, Loader2 } from 'lucide-react';
+import { PlusCircle, ListChecks, Sparkles, Loader2, Eye } from 'lucide-react';
 import type { UserPrayer } from '@/types';
 import PrayerCard from '@/components/prayer/my-prayers/PrayerCard';
 import PrayerEditorModal from '@/components/prayer/my-prayers/PrayerEditorModal';
+import AnswerDetailsModal from '@/components/prayer/my-prayers/AnswerDetailsModal';
+import PrayerDetailModal from '@/components/prayer/my-prayers/PrayerDetailModal';
 import { useToast } from "@/hooks/use-toast";
 
 export default function MyPrayersPage() {
   const { userPrayers, addUserPrayer, updateUserPrayer, deleteUserPrayer, markPrayerAsPrayed, markPrayerAsAnswered, isLoading: dataLoading, currentUserProfile } = useUserData();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
   const [editingPrayer, setEditingPrayer] = useState<UserPrayer | null>(null);
+  
+  const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false);
+  const [answeringPrayer, setAnsweringPrayer] = useState<UserPrayer | null>(null);
+
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedPrayerForDetail, setSelectedPrayerForDetail] = useState<UserPrayer | null>(null);
+  
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -25,12 +35,17 @@ export default function MyPrayersPage() {
 
   const openAddModal = () => {
     setEditingPrayer(null);
-    setIsModalOpen(true);
+    setIsEditorModalOpen(true);
   };
 
   const openEditModal = (prayer: UserPrayer) => {
     setEditingPrayer(prayer);
-    setIsModalOpen(true);
+    setIsEditorModalOpen(true);
+  };
+  
+  const openDetailModal = (prayer: UserPrayer) => {
+    setSelectedPrayerForDetail(prayer);
+    setIsDetailModalOpen(true);
   };
 
   const handleSavePrayer = (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt' | 'isAnswered' | 'answeredAt' | 'answerDescription'>) => {
@@ -45,7 +60,7 @@ export default function MyPrayersPage() {
       addUserPrayer(prayerData);
       toast({ title: "Prayer Added", description: `"${prayerData.title}" has been added to your list.` });
     }
-    setIsModalOpen(false);
+    setIsEditorModalOpen(false);
     setEditingPrayer(null);
   };
 
@@ -62,16 +77,28 @@ export default function MyPrayersPage() {
   };
 
   const handleToggleAnswered = (prayer: UserPrayer) => {
-    const newAnsweredState = !prayer.isAnswered;
-    // For simplicity, this example doesn't prompt for answer details here.
-    // A more complete solution might open a small modal or inline form for `answerDescription`.
-    markPrayerAsAnswered(prayer.id, { 
-      description: newAnsweredState ? (prayer.answerDescription || "Answered!") : undefined 
-    });
-    toast({ 
-      title: newAnsweredState ? "Prayer Answered!" : "Marked as Unanswered", 
-      description: `"${prayer.title}" marked as ${newAnsweredState ? 'answered' : 'not yet answered'}.` 
-    });
+    if (!prayer.isAnswered) { // If marking AS answered
+      setAnsweringPrayer(prayer);
+      setIsAnswerModalOpen(true);
+    } else { // If un-marking (already answered)
+      markPrayerAsAnswered(prayer.id); // This will clear description and date
+      toast({ 
+        title: "Marked as Unanswered", 
+        description: `"${prayer.title}" status reverted.` 
+      });
+    }
+  };
+
+  const handleSaveAnswer = (description: string) => {
+    if (answeringPrayer) {
+      markPrayerAsAnswered(answeringPrayer.id, { description });
+      toast({ 
+        title: "Prayer Answered!", 
+        description: `"${answeringPrayer.title}" marked as answered.` 
+      });
+      setIsAnswerModalOpen(false);
+      setAnsweringPrayer(null);
+    }
   };
   
   if (isLoading) {
@@ -115,17 +142,34 @@ export default function MyPrayersPage() {
               onDelete={() => handleDeletePrayer(prayer.id, prayer.title)}
               onMarkAsPrayed={() => handleMarkAsPrayed(prayer.id, prayer.title)}
               onToggleAnswered={() => handleToggleAnswered(prayer)}
+              onViewDetails={() => openDetailModal(prayer)}
             />
           ))}
         </div>
       )}
 
-      {isModalOpen && (
+      {isEditorModalOpen && (
         <PrayerEditorModal
-          isOpen={isModalOpen}
-          onClose={() => { setIsModalOpen(false); setEditingPrayer(null); }}
+          isOpen={isEditorModalOpen}
+          onClose={() => { setIsEditorModalOpen(false); setEditingPrayer(null); }}
           onSave={handleSavePrayer}
           prayer={editingPrayer}
+        />
+      )}
+      {isAnswerModalOpen && answeringPrayer && (
+        <AnswerDetailsModal
+          isOpen={isAnswerModalOpen}
+          onClose={() => { setIsAnswerModalOpen(false); setAnsweringPrayer(null); }}
+          onSubmit={handleSaveAnswer}
+          prayerTitle={answeringPrayer.title}
+          initialDescription={answeringPrayer.answerDescription || ""}
+        />
+      )}
+      {isDetailModalOpen && selectedPrayerForDetail && (
+        <PrayerDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={() => { setIsDetailModalOpen(false); setSelectedPrayerForDetail(null); }}
+          prayer={selectedPrayerForDetail}
         />
       )}
     </div>

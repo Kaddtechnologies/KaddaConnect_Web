@@ -5,7 +5,7 @@ import type { UserPrayer } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, CheckCircle, XCircle, Clock, CalendarDays, MessageSquare, Sparkles } from 'lucide-react';
+import { Edit2, Trash2, CheckCircle, XCircle, Clock, CalendarDays, MessageSquare, Sparkles, Eye } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -15,16 +15,20 @@ interface PrayerCardProps {
   onDelete: () => void;
   onMarkAsPrayed: () => void;
   onToggleAnswered: () => void;
+  onViewDetails: () => void;
 }
 
-export default function PrayerCard({ prayer, onEdit, onDelete, onMarkAsPrayed, onToggleAnswered }: PrayerCardProps) {
+export default function PrayerCard({ prayer, onEdit, onDelete, onMarkAsPrayed, onToggleAnswered, onViewDetails }: PrayerCardProps) {
   return (
     <Card className={cn(
         "flex flex-col h-full shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-primary/20",
         prayer.isAnswered ? "bg-green-800/10 border-green-500/30" : "bg-card border-border"
       )}
     >
-      <CardHeader className="p-4 pb-2">
+      <CardHeader 
+        className="p-4 pb-2 cursor-pointer hover:bg-muted/10 transition-colors"
+        onClick={onViewDetails}
+      >
         <div className="flex justify-between items-start">
             <CardTitle className="text-lg font-headline mb-1 leading-tight">{prayer.title}</CardTitle>
             <Badge 
@@ -48,8 +52,8 @@ export default function PrayerCard({ prayer, onEdit, onDelete, onMarkAsPrayed, o
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent className="p-4 pt-2 flex-grow">
-        <p className="text-sm text-muted-foreground line-clamp-4 whitespace-pre-wrap">{prayer.content}</p>
+      <CardContent className="p-4 pt-2 flex-grow cursor-pointer hover:bg-muted/5 transition-colors" onClick={onViewDetails}>
+        <p className="text-sm text-muted-foreground line-clamp-3 whitespace-pre-wrap">{prayer.content}</p>
         {prayer.isAnswered && (
             <div className="mt-3 pt-3 border-t border-green-500/30">
                 <p className="text-sm font-semibold text-green-400 flex items-center mb-1">
