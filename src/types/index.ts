@@ -37,3 +37,11 @@ export interface DailyVerse {
   text: string;
   date: string; // ISO string date for when this verse is "daily"
 }
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+  timestamp: string; // ISO string date
+  status?: 'loading' | 'error'; // Optional status for bot messages
+}
