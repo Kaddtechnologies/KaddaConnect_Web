@@ -137,3 +137,13 @@ export interface SermonNote {
   createdAt: string; // ISO string date
   updatedAt?: string; // ISO string date
 }
+
+// Type for Sermon Search Tool Output
+export interface SermonSummaryForTool {
+  id: string;
+  title: string;
+  speaker: string;
+  date: string; // ISO string date
+  summary?: string;
+  topics?: string[];
+}
