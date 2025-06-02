@@ -87,6 +87,7 @@ export interface PrayerNote {
   userId: string; // Should match UserPrayer.userId
   text: string;
   createdAt: string; // ISO string date
+  updatedAt?: string; // ISO string date, for when the note is edited
 }
 
 export interface PrayerSession {

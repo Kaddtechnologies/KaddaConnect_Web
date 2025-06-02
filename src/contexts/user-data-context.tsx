@@ -48,6 +48,8 @@ interface UserDataContextType {
   markPrayerAsAnswered: (prayerId: string, answerDetails?: { description?: string; date?: string }) => void;
   
   addPrayerNote: (prayerId: string, noteText: string) => void;
+  updatePrayerNote: (noteId: string, newText: string) => void;
+  deletePrayerNote: (noteId: string) => void;
   getNotesForPrayer: (prayerId: string) => PrayerNote[];
 }
 
@@ -72,6 +74,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoading(true);
+      // Simulate fetching data
+      // In a real app, this would be an API call to Firestore
       await new Promise(resolve => setTimeout(resolve, 300)); 
 
       setPosts(placeholderPosts);
@@ -82,23 +86,29 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       
       if (authUser) {
         let profile = placeholderMembers.find(m => m.id === authUser.id);
+        // If user profile doesn't exist in members, create one from authUser
         if (!profile) {
+            // This scenario might happen if a user signs up and placeholderMembers isn't updated
+            // Or if authUser has info not in the generic members list.
             profile = {
-                ...authUser,
-                ministry: authUser.ministry || 'General Member',
-                interests: authUser.interests || [],
+                ...authUser, // Spread authUser to get id, displayName, email
+                ministry: authUser.ministry || 'General Member', // Default if not present
+                interests: authUser.interests || [], // Default if not present
                 profilePictureUrl: authUser.profilePictureUrl || `https://placehold.co/100x100.png?text=${authUser.displayName.charAt(0)}`,
                 dataAiHint: 'profile person'
             };
-            setMembers(prev => [...prev, profile!]); 
+            // Optionally add this newly created profile to the main members list if desired
+            // setMembers(prev => [...prev, profile!]); 
         }
-        setCurrentUserProfile(profile);
+        setCurrentUserProfile(profile); // Set the detailed profile
 
+        // Filter data specific to the logged-in user
         setUserArticleInteractions(placeholderUserArticleInteractions.filter(interaction => interaction.userId === authUser.id));
         setUserPrayers(placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setPrayerNotes(placeholderPrayerNotes.filter(note => note.userId === authUser.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setPrayerSessions(placeholderPrayerSessions.filter(session => session.userId === authUser.id));
       } else {
+        // No authenticated user, clear user-specific data
         setCurrentUserProfile(null);
         setUserArticleInteractions([]);
         setUserPrayers([]);
@@ -108,10 +118,10 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     };
 
-    if (!authLoading) { 
+    if (!authLoading) { // Only load data if auth state is resolved
       loadInitialData();
     }
-  }, [authUser, authLoading]);
+  }, [authUser, authLoading]); // Depend on authUser and authLoading
 
 
   const addPost = (content: string, imageUrl?: string) => {
@@ -162,6 +172,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     setMembers(prevMembers => 
       prevMembers.map(member => member.id === currentUserProfile.id ? updatedProfile : member)
     );
+    // If display name or profile picture changed, update posts by this author
     if (updatedProfileData.displayName || updatedProfileData.profilePictureUrl) {
         setPosts(prevPosts => prevPosts.map(p => {
             if (p.author.id === currentUserProfile.id) {
@@ -176,6 +187,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     return members.find(member => member.id === id);
   };
 
+  // --- Prayer Module Functions ---
+
   const toggleFavoriteArticle = (articleId: string) => {
     if (!currentUserProfile) return;
     setUserArticleInteractions(prev => {
@@ -187,6 +200,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           : fav
         );
       }
+      // If no existing interaction, create a new one and mark as favorited
       return [...prev, { userId: currentUserProfile.id, articleId, isFavorited: true, favoritedAt: new Date().toISOString() }];
     });
   };
@@ -217,8 +231,9 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteUserPrayer = (prayerId: string) => {
     if (!currentUserProfile) return;
-    setUserPrayers(prev => prev.filter(p => !(p.id === prayerId && p.userId === currentUserProfile.id)));
+    // Also delete associated notes when deleting a prayer
     setPrayerNotes(prev => prev.filter(note => !(note.prayerId === prayerId && note.userId === currentUserProfile.id)));
+    setUserPrayers(prev => prev.filter(p => !(p.id === prayerId && p.userId === currentUserProfile.id)));
   };
 
   const markPrayerAsPrayed = (prayerId: string) => {
@@ -236,7 +251,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           ...p, 
           isAnswered: newAnsweredState,
           answeredAt: newAnsweredState ? (answerDetails?.date || new Date().toISOString()) : undefined,
-          answerDescription: newAnsweredState ? (answerDetails?.description || (isCurrentlyAnswered ? undefined : "Answered!")) : undefined, // Clear description if unmarking
+          // Clear description if unmarking, or use provided/default if marking
+          answerDescription: newAnsweredState ? (answerDetails?.description || (isCurrentlyAnswered ? undefined : "Answered!")) : undefined, 
         };
       }
       return p;
@@ -255,8 +271,27 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     setPrayerNotes(prev => [newNote, ...prev].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
   
+  const updatePrayerNote = (noteId: string, newText: string) => {
+    if (!currentUserProfile) return;
+    setPrayerNotes(prev => 
+      prev.map(note => 
+        note.id === noteId && note.userId === currentUserProfile.id 
+        ? { ...note, text: newText, updatedAt: new Date().toISOString() } 
+        : note
+      ).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    );
+  };
+
+  const deletePrayerNote = (noteId: string) => {
+    if (!currentUserProfile) return;
+    setPrayerNotes(prev => 
+      prev.filter(note => !(note.id === noteId && note.userId === currentUserProfile.id))
+    );
+  };
+  
   const getNotesForPrayer = (prayerId: string): PrayerNote[] => {
     if (!currentUserProfile) return [];
+    // Ensure notes are sorted by creation date, most recent first
     return prayerNotes.filter(note => note.prayerId === prayerId && note.userId === currentUserProfile.id)
                       .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   };
@@ -269,7 +304,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       articles, userArticleInteractions, userPrayers, prayerNotes, prayerSessions,
       toggleFavoriteArticle, isArticleFavorited,
       addUserPrayer, updateUserPrayer, deleteUserPrayer, markPrayerAsPrayed, markPrayerAsAnswered, 
-      addPrayerNote, getNotesForPrayer
+      addPrayerNote, updatePrayerNote, deletePrayerNote, getNotesForPrayer
     }}>
       {children}
     </UserDataContext.Provider>
@@ -283,4 +318,3 @@ export const useUserData = () => {
   }
   return context;
 };
-
