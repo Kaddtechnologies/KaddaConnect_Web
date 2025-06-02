@@ -11,6 +11,7 @@ import { Send, MessageCircle, Bot, User, AlertTriangle, Loader2 } from 'lucide-r
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
+import { askSpiritualChatbot } from '@/ai/flows/spiritual-chat-flow'; // Import the Genkit flow
 
 // Placeholder for quick replies
 const quickReplies = [
@@ -39,8 +40,6 @@ export default function ChatPage() {
     setInputValue('');
     setIsLoadingResponse(true);
 
-    // Simulate bot response for now
-    // In the next step, we'll call the Genkit flow here
     const botMessageId = `msg-${Date.now() + 1}`;
     setMessages((prev) => [
       ...prev,
@@ -54,15 +53,11 @@ export default function ChatPage() {
     ]);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // const response = await askSpiritualChatbot({ message: messageText }); // This will be the actual Genkit call
-      const botResponseText = `This is a simulated response to: "${messageText}". The Genkit flow will be integrated soon.`; // Placeholder
-
+      const response = await askSpiritualChatbot({ message: messageText });
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botMessageId
-            ? { ...msg, text: botResponseText, status: undefined }
+            ? { ...msg, text: response.response, status: undefined }
             : msg
         )
       );
