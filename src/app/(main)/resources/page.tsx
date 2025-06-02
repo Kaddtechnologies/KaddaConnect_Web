@@ -4,17 +4,20 @@
 import { useUserData } from '@/contexts/user-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpenText, Share2, Library, Search } from 'lucide-react';
+import { BookOpenText, Share2, Library, Search, Filter as FilterIcon } from 'lucide-react'; // Added FilterIcon
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import SermonCard from '@/components/resources/SermonCard';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge'; // For topic chips
+import { cn } from '@/lib/utils'; // For conditional classnames
 
 export default function ResourcesPage() {
   const { dailyVerse, sermons: allSermons } = useUserData();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
   const handleShareVerse = () => {
     if (dailyVerse) {
@@ -35,17 +38,48 @@ export default function ResourcesPage() {
     }
   };
 
+  const allUniqueTopics = useMemo(() => {
+    if (!allSermons) return [];
+    const topicsSet = new Set<string>();
+    allSermons.forEach(sermon => {
+      sermon.topics?.forEach(topic => topicsSet.add(topic));
+    });
+    return Array.from(topicsSet).sort();
+  }, [allSermons]);
+
+  const handleToggleTopic = (topic: string) => {
+    setSelectedTopics(prev =>
+      prev.includes(topic)
+        ? prev.filter(t => t !== topic)
+        : [...prev, topic]
+    );
+  };
+
   const filteredSermons = useMemo(() => {
     if (!allSermons) return [];
-    if (!searchTerm.trim()) return allSermons;
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    return allSermons.filter(sermon =>
-      sermon.title.toLowerCase().includes(lowerSearchTerm) ||
-      sermon.speaker.toLowerCase().includes(lowerSearchTerm) ||
-      (sermon.topics && sermon.topics.some(topic => topic.toLowerCase().includes(lowerSearchTerm))) ||
-      (sermon.scriptureReferences && sermon.scriptureReferences.some(ref => ref.toLowerCase().includes(lowerSearchTerm)))
-    );
-  }, [allSermons, searchTerm]);
+    
+    let sermonsToFilter = allSermons;
+
+    // Filter by selected topics
+    if (selectedTopics.length > 0) {
+      sermonsToFilter = sermonsToFilter.filter(sermon =>
+        selectedTopics.every(selTopic => sermon.topics?.includes(selTopic))
+      );
+    }
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      sermonsToFilter = sermonsToFilter.filter(sermon =>
+        sermon.title.toLowerCase().includes(lowerSearchTerm) ||
+        sermon.speaker.toLowerCase().includes(lowerSearchTerm) ||
+        (sermon.summary && sermon.summary.toLowerCase().includes(lowerSearchTerm)) ||
+        (sermon.topics && sermon.topics.some(topic => topic.toLowerCase().includes(lowerSearchTerm))) ||
+        (sermon.scriptureReferences && sermon.scriptureReferences.some(ref => ref.toLowerCase().includes(lowerSearchTerm)))
+      );
+    }
+    return sermonsToFilter;
+  }, [allSermons, searchTerm, selectedTopics]);
 
   return (
     <div className="container mx-auto max-w-3xl py-0 md:py-6">
@@ -85,7 +119,7 @@ export default function ResourcesPage() {
           <CardDescription>Explore past sermons and take notes.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative mb-6">
+          <div className="relative mb-4">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
@@ -95,6 +129,31 @@ export default function ResourcesPage() {
               className="pl-11 pr-4 py-3 text-base rounded-lg shadow-sm"
             />
           </div>
+          {allUniqueTopics.length > 0 && (
+            <div className="mb-6 space-y-2">
+              <div className="flex items-center text-sm text-muted-foreground">
+                <FilterIcon className="h-4 w-4 mr-2"/>
+                <span>Filter by Topic:</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {allUniqueTopics.map(topic => (
+                  <Badge
+                    key={topic}
+                    variant={selectedTopics.includes(topic) ? "default" : "secondary"}
+                    onClick={() => handleToggleTopic(topic)}
+                    className={cn(
+                      "cursor-pointer transition-all px-3 py-1.5 text-sm rounded-full shadow-sm",
+                      selectedTopics.includes(topic) 
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
           {filteredSermons.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {filteredSermons.map(sermon => (
@@ -102,7 +161,7 @@ export default function ResourcesPage() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-4">No sermons found matching your search.</p>
+            <p className="text-muted-foreground text-center py-4">No sermons found matching your search or filter criteria.</p>
           )}
         </CardContent>
       </Card>
@@ -119,3 +178,5 @@ export default function ResourcesPage() {
     </div>
   );
 }
+
+    
