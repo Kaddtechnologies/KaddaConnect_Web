@@ -1,5 +1,5 @@
 
-import type { UserProfile, Post, Member, OldPrayerRequest, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession } from '@/types';
+import type { UserProfile, Post, Member, OldPrayerRequest, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession, ChatConversation, ChatMessage } from '@/types';
 
 export const placeholderUser: UserProfile = {
   id: 'user1',
@@ -51,6 +51,7 @@ export const placeholderMembers: Member[] = [
     dataAiHint: 'profile person',
     interests: ['Gardening', 'Bible Study'],
     ministry: 'Welcome Team',
+    email: 'jane@example.com',
   },
   {
     id: 'user3',
@@ -59,6 +60,7 @@ export const placeholderMembers: Member[] = [
     dataAiHint: 'profile person',
     interests: ['Tech', 'Youth Group'],
     ministry: 'Youth Ministry',
+    email: 'mike@example.com',
   },
   {
     id: 'user4',
@@ -67,6 +69,7 @@ export const placeholderMembers: Member[] = [
     dataAiHint: 'profile person',
     interests: ['Cooking', 'Outreach'],
     ministry: 'Outreach Committee',
+    email: 'sarah@example.com',
   },
 ];
 
@@ -177,6 +180,14 @@ export const placeholderPrayerNotes: PrayerNote[] = [
     userId: 'user1',
     text: 'Feeling more clarity today after praying. One potential opportunity seems promising.',
     createdAt: new Date(Date.now() - 1000 * 60 * 50).toISOString(), // 50 minutes ago
+  },
+  {
+    id: 'note2',
+    prayerId: 'userprayer1',
+    userId: 'user1',
+    text: 'Read a relevant scripture today that really spoke to this situation.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(), // 1 day ago
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(), // 20 hours ago
   }
 ];
 
@@ -197,4 +208,30 @@ export const placeholderPrayerSessions: PrayerSession[] = [
         prayerIds: ['userprayer2'],
         notes: "Quick prayer for Aunt Mary."
     }
+];
+
+
+export const placeholderChatConversations: ChatConversation[] = [
+  {
+    id: 'convo1',
+    userId: 'user1',
+    title: 'Feeling Stressed',
+    messages: [
+      { id: 'msg1-1', text: "I'm feeling really stressed about work lately.", sender: 'user', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+      { id: 'msg1-2', text: "I understand, Alex. It's common to feel overwhelmed by work. Remember Philippians 4:6-7: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.' (NIV) Take a moment to breathe and cast your cares upon Him. What specifically about work is causing stress?", sender: 'bot', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2 + 5000).toISOString() },
+    ],
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2 + 5000).toISOString(),
+  },
+  {
+    id: 'convo2',
+    userId: 'user1',
+    title: 'Guidance Needed',
+    messages: [
+      { id: 'msg2-1', text: "I need some guidance on a big decision.", sender: 'user', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+      { id: 'msg2-2', text: "Alex, when seeking guidance, it's wise to turn to the Lord. Proverbs 3:5-6 says, 'Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.' (NIV) Can you tell me a bit more about the decision you're facing?", sender: 'bot', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 + 5000).toISOString() },
+    ],
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 + 5000).toISOString(),
+  }
 ];

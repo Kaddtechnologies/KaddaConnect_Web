@@ -47,6 +47,16 @@ export interface ChatMessage {
   status?: 'loading' | 'error'; 
 }
 
+export interface ChatConversation {
+  id: string;
+  userId: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string; // ISO string date
+  updatedAt: string; // ISO string date
+}
+
+
 // --- New types for Prayer Module ---
 
 export interface Article {
@@ -79,6 +89,7 @@ export interface UserPrayer {
   isAnswered: boolean;
   answerDescription?: string;
   answeredAt?: string; // ISO string date
+  notes?: PrayerNote[]; // Embedded or linked notes
 }
 
 export interface PrayerNote {

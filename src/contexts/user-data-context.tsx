@@ -1,8 +1,8 @@
 
 "use client";
 
-import type { Post, Member, OldPrayerRequest, UserProfile, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession } from '@/types';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import type { Post, Member, OldPrayerRequest, UserProfile, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession, ChatMessage, ChatConversation } from '@/types';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { 
   placeholderPosts, 
   placeholderMembers, 
@@ -12,7 +12,8 @@ import {
   placeholderUserArticleInteractions,
   placeholderUserPrayers, 
   placeholderPrayerNotes,
-  placeholderPrayerSessions
+  placeholderPrayerSessions,
+  placeholderChatConversations
 } from '@/lib/placeholder-data';
 import { useAuth } from './auth-context';
 
@@ -41,8 +42,8 @@ interface UserDataContextType {
   toggleFavoriteArticle: (articleId: string) => void;
   isArticleFavorited: (articleId: string) => boolean;
   
-  addUserPrayer: (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt' | 'isAnswered' | 'answeredAt' | 'answerDescription'>) => void;
-  updateUserPrayer: (prayerId: string, updates: Partial<Omit<UserPrayer, 'id' | 'userId' | 'createdAt'>>) => void;
+  addUserPrayer: (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt' | 'isAnswered' | 'answeredAt' | 'answerDescription' | 'notes'>) => void;
+  updateUserPrayer: (prayerId: string, updates: Partial<Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'notes'>>) => void;
   deleteUserPrayer: (prayerId: string) => void;
   markPrayerAsPrayed: (prayerId: string) => void;
   markPrayerAsAnswered: (prayerId: string, answerDetails?: { description?: string; date?: string }) => void;
@@ -51,6 +52,16 @@ interface UserDataContextType {
   updatePrayerNote: (noteId: string, newText: string) => void;
   deletePrayerNote: (noteId: string) => void;
   getNotesForPrayer: (prayerId: string) => PrayerNote[];
+
+  // Chat Module Data & Functions
+  chatConversations: ChatConversation[];
+  activeChatConversationId: string | null;
+  setActiveChatConversationId: (conversationId: string | null) => void;
+  getActiveConversation: () => ChatConversation | undefined;
+  saveNewChatConversation: (messages: ChatMessage[], title?: string) => string; // Returns new conversation ID
+  addMessageToChatConversation: (conversationId: string, message: ChatMessage) => void;
+  deleteChatConversation: (conversationId: string) => void;
+  renameChatConversation: (conversationId: string, newTitle: string) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
@@ -70,12 +81,15 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [userPrayers, setUserPrayers] = useState<UserPrayer[]>([]);
   const [prayerNotes, setPrayerNotes] = useState<PrayerNote[]>([]);
   const [prayerSessions, setPrayerSessions] = useState<PrayerSession[]>([]);
+  
+  // Chat State
+  const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
+  const [activeChatConversationId, setActiveChatConversationIdState] = useState<string | null>(null);
+
 
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoading(true);
-      // Simulate fetching data
-      // In a real app, this would be an API call to Firestore
       await new Promise(resolve => setTimeout(resolve, 300)); 
 
       setPosts(placeholderPosts);
@@ -86,42 +100,42 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       
       if (authUser) {
         let profile = placeholderMembers.find(m => m.id === authUser.id);
-        // If user profile doesn't exist in members, create one from authUser
         if (!profile) {
-            // This scenario might happen if a user signs up and placeholderMembers isn't updated
-            // Or if authUser has info not in the generic members list.
             profile = {
-                ...authUser, // Spread authUser to get id, displayName, email
-                ministry: authUser.ministry || 'General Member', // Default if not present
-                interests: authUser.interests || [], // Default if not present
+                ...authUser,
+                ministry: authUser.ministry || 'General Member',
+                interests: authUser.interests || [],
                 profilePictureUrl: authUser.profilePictureUrl || `https://placehold.co/100x100.png?text=${authUser.displayName.charAt(0)}`,
                 dataAiHint: 'profile person'
             };
-            // Optionally add this newly created profile to the main members list if desired
-            // setMembers(prev => [...prev, profile!]); 
         }
-        setCurrentUserProfile(profile); // Set the detailed profile
+        setCurrentUserProfile(profile);
 
-        // Filter data specific to the logged-in user
         setUserArticleInteractions(placeholderUserArticleInteractions.filter(interaction => interaction.userId === authUser.id));
         setUserPrayers(placeholderUserPrayers.filter(prayer => prayer.userId === authUser.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setPrayerNotes(placeholderPrayerNotes.filter(note => note.userId === authUser.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setPrayerSessions(placeholderPrayerSessions.filter(session => session.userId === authUser.id));
+        
+        // Load chat conversations for the user
+        setChatConversations(placeholderChatConversations.filter(convo => convo.userId === authUser.id).sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+        setActiveChatConversationIdState(null); // Start with no active chat selected
+
       } else {
-        // No authenticated user, clear user-specific data
         setCurrentUserProfile(null);
         setUserArticleInteractions([]);
         setUserPrayers([]);
         setPrayerNotes([]);
         setPrayerSessions([]);
+        setChatConversations([]);
+        setActiveChatConversationIdState(null);
       }
       setIsLoading(false);
     };
 
-    if (!authLoading) { // Only load data if auth state is resolved
+    if (!authLoading) {
       loadInitialData();
     }
-  }, [authUser, authLoading]); // Depend on authUser and authLoading
+  }, [authUser, authLoading]);
 
 
   const addPost = (content: string, imageUrl?: string) => {
@@ -172,7 +186,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     setMembers(prevMembers => 
       prevMembers.map(member => member.id === currentUserProfile.id ? updatedProfile : member)
     );
-    // If display name or profile picture changed, update posts by this author
     if (updatedProfileData.displayName || updatedProfileData.profilePictureUrl) {
         setPosts(prevPosts => prevPosts.map(p => {
             if (p.author.id === currentUserProfile.id) {
@@ -200,7 +213,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           : fav
         );
       }
-      // If no existing interaction, create a new one and mark as favorited
       return [...prev, { userId: currentUserProfile.id, articleId, isFavorited: true, favoritedAt: new Date().toISOString() }];
     });
   };
@@ -210,7 +222,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     return userArticleInteractions.some(fav => fav.articleId === articleId && fav.userId === currentUserProfile.id && fav.isFavorited);
   };
 
-  const addUserPrayer = (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt' | 'isAnswered' | 'answeredAt' | 'answerDescription'>) => {
+  const addUserPrayer = (prayerData: Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'lastPrayedAt' | 'isAnswered' | 'answeredAt' | 'answerDescription' | 'notes'>) => {
     if (!currentUserProfile) return;
     const newUserPrayer: UserPrayer = {
       ...prayerData,
@@ -219,11 +231,12 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       createdAt: new Date().toISOString(),
       lastPrayedAt: null,
       isAnswered: false,
+      notes: [],
     };
     setUserPrayers(prev => [newUserPrayer, ...prev].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
-  const updateUserPrayer = (prayerId: string, updates: Partial<Omit<UserPrayer, 'id' | 'userId' | 'createdAt'>>) => {
+  const updateUserPrayer = (prayerId: string, updates: Partial<Omit<UserPrayer, 'id' | 'userId' | 'createdAt' | 'notes'>>) => {
     if (!currentUserProfile) return;
     setUserPrayers(prev => prev.map(p => p.id === prayerId && p.userId === currentUserProfile.id ? { ...p, ...updates } : p)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
@@ -231,7 +244,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteUserPrayer = (prayerId: string) => {
     if (!currentUserProfile) return;
-    // Also delete associated notes when deleting a prayer
     setPrayerNotes(prev => prev.filter(note => !(note.prayerId === prayerId && note.userId === currentUserProfile.id)));
     setUserPrayers(prev => prev.filter(p => !(p.id === prayerId && p.userId === currentUserProfile.id)));
   };
@@ -251,7 +263,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           ...p, 
           isAnswered: newAnsweredState,
           answeredAt: newAnsweredState ? (answerDetails?.date || new Date().toISOString()) : undefined,
-          // Clear description if unmarking, or use provided/default if marking
           answerDescription: newAnsweredState ? (answerDetails?.description || (isCurrentlyAnswered ? undefined : "Answered!")) : undefined, 
         };
       }
@@ -289,13 +300,61 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     );
   };
   
-  const getNotesForPrayer = (prayerId: string): PrayerNote[] => {
+  const getNotesForPrayer = useCallback((prayerId: string): PrayerNote[] => {
     if (!currentUserProfile) return [];
-    // Ensure notes are sorted by creation date, most recent first
     return prayerNotes.filter(note => note.prayerId === prayerId && note.userId === currentUserProfile.id)
                       .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [prayerNotes, currentUserProfile]);
+
+
+  // --- Chat Module Functions ---
+  const setActiveChatConversationId = (conversationId: string | null) => {
+    setActiveChatConversationIdState(conversationId);
   };
 
+  const getActiveConversation = useCallback((): ChatConversation | undefined => {
+    return chatConversations.find(convo => convo.id === activeChatConversationId);
+  }, [chatConversations, activeChatConversationId]);
+
+  const saveNewChatConversation = (messagesToSave: ChatMessage[], title?: string): string => {
+    if (!currentUserProfile) throw new Error("User not authenticated");
+    const newConversation: ChatConversation = {
+      id: `chatconvo-${Date.now()}`,
+      userId: currentUserProfile.id,
+      title: title || messagesToSave[0]?.text.substring(0, 30) || "New Chat",
+      messages: messagesToSave,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setChatConversations(prev => [newConversation, ...prev].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+    setActiveChatConversationIdState(newConversation.id);
+    return newConversation.id;
+  };
+
+  const addMessageToChatConversation = (conversationId: string, message: ChatMessage) => {
+    setChatConversations(prev =>
+      prev.map(convo =>
+        convo.id === conversationId
+          ? { ...convo, messages: [...convo.messages, message], updatedAt: new Date().toISOString() }
+          : convo
+      ).sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    );
+  };
+  
+  const deleteChatConversation = (conversationId: string) => {
+    setChatConversations(prev => prev.filter(convo => convo.id !== conversationId));
+    if (activeChatConversationId === conversationId) {
+      setActiveChatConversationIdState(null); // Or to the next/previous conversation
+    }
+  };
+
+  const renameChatConversation = (conversationId: string, newTitle: string) => {
+    setChatConversations(prev =>
+      prev.map(convo =>
+        convo.id === conversationId ? { ...convo, title: newTitle, updatedAt: new Date().toISOString() } : convo
+      ).sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    );
+  };
 
   return (
     <UserDataContext.Provider value={{ 
@@ -304,7 +363,11 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       articles, userArticleInteractions, userPrayers, prayerNotes, prayerSessions,
       toggleFavoriteArticle, isArticleFavorited,
       addUserPrayer, updateUserPrayer, deleteUserPrayer, markPrayerAsPrayed, markPrayerAsAnswered, 
-      addPrayerNote, updatePrayerNote, deletePrayerNote, getNotesForPrayer
+      addPrayerNote, updatePrayerNote, deletePrayerNote, getNotesForPrayer,
+      // Chat
+      chatConversations, activeChatConversationId, setActiveChatConversationId,
+      getActiveConversation, saveNewChatConversation, addMessageToChatConversation,
+      deleteChatConversation, renameChatConversation
     }}>
       {children}
     </UserDataContext.Provider>
