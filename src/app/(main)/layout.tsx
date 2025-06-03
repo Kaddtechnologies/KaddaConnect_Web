@@ -7,7 +7,7 @@ import BottomNavigation from '@/components/layout/bottom-navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { 
-  LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon, UsersRound, Award, Menu as MenuIcon, X 
+  LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon, UsersRound, Award, Menu as MenuIcon, X, PanelLeft 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -30,7 +30,8 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  useSidebar // Import useSidebar
+  useSidebar,
+  SidebarRail
 } from "@/components/ui/sidebar"; 
 
 const mainNavItems = [
@@ -43,13 +44,12 @@ const mainNavItems = [
   { href: '/achievements', label: 'Achievements', icon: Award }, 
 ];
 
-// New component to handle sidebar close on mobile after navigation
 function MobileSidebarMenuItem({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) {
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar(); // Use the hook
+  const { setOpenMobile } = useSidebar(); 
 
   const handleClick = () => {
-    setOpenMobile(false); // Close sidebar on click
+    setOpenMobile(false); 
   };
 
   return (
@@ -58,7 +58,7 @@ function MobileSidebarMenuItem({ href, label, icon: Icon }: { href: string, labe
         <SidebarMenuButton 
           isActive={pathname.startsWith(href)} 
           className="justify-start"
-          onClick={handleClick} // Add onClick handler
+          onClick={handleClick} 
         >
           <Icon className="h-5 w-5" />
           <span>{label}</span>
@@ -74,7 +74,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isLoading, logout } = useAuth();
   const [isDarkTheme, setIsDarkTheme] = useState(true);
-  const sidebarContext = useSidebar(); // Get context for mobile sidebar trigger
+  const sidebarContext = useSidebar(); 
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -107,12 +107,12 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
 
   if (isLoading || (!isLoading && !user)) {
     return (
-      <div className="flex flex-col h-screen bg-background">
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+      <div className="flex min-h-screen bg-background text-foreground"> {/* <-- UPDATED CLASS */}
+        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 w-full">
           <Skeleton className="h-8 w-32 bg-muted" />
           <Skeleton className="h-8 w-8 rounded-full bg-muted" />
         </header>
-        <div className="flex flex-1 flex-col items-center justify-center p-6">
+        <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16"> {/* Adjusted to be absolute and account for header */}
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
           <p className="text-muted-foreground">Authenticating...</p>
         </div>
@@ -128,12 +128,13 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   return (
       <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar collapsible="icon" className="hidden md:flex md:flex-col border-r border-border"> 
+          <SidebarRail />
           <SidebarHeader className="p-2 h-16 flex items-center justify-between">
              <Link href="/home" className="flex items-center gap-2 font-semibold text-primary px-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 group-data-[state=collapsed]:hidden"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
                 <span className="font-headline text-xl group-data-[state=collapsed]:hidden">KaddaConnect</span>
              </Link>
-             <SidebarTrigger className="group-data-[state=expanded]:hidden" /> 
+             <SidebarTrigger className="group-data-[state=expanded]:hidden h-8 w-8" /> 
           </SidebarHeader>
           <SidebarContent className="flex-grow p-2">
             <SidebarMenu>
@@ -202,7 +203,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
          <SidebarInset className="flex flex-col flex-1"> 
           <header className="sticky top-0 z-30 flex md:hidden h-16 items-center justify-between bg-card px-4 border-b border-border">
               <SidebarTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-foreground">
                   <MenuIcon className="h-6 w-6" />
                   <span className="sr-only">Open menu</span>
                 </Button>
@@ -252,7 +253,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
           </Sidebar>
 
           <main className="flex-grow">
-            <div className="h-full">{children}</div> {/* Removed outer padding, let page control its padding */}
+            <div className="h-full">{children}</div>
           </main>
           <BottomNavigation /> 
         </SidebarInset>
@@ -262,14 +263,14 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function MainAppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={true}> {/* defaultOpen controls desktop sidebar state */}
+    <SidebarProvider defaultOpen={true}> 
       <Suspense fallback={
-        <div className="flex flex-col h-screen bg-background">
-          <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+        <div className="flex min-h-screen bg-background text-foreground"> {/* <-- UPDATED CLASS */}
+          <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 w-full">
             <Skeleton className="h-8 w-32 bg-muted" />
             <Skeleton className="h-8 w-8 rounded-full bg-muted" />
           </header>
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
+          <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16"> {/* Adjusted to be absolute and account for header */}
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             <p className="text-muted-foreground">Loading KaddaConnect...</p>
           </div>
@@ -280,3 +281,5 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
     </SidebarProvider>
   )
 }
+
+    
