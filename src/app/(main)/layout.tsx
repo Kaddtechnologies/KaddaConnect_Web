@@ -3,11 +3,11 @@
 import { useEffect, Suspense, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import BottomNavigation from '@/components/layout/bottom-navigation'; // Will be reviewed if sidebar handles mobile well
+import BottomNavigation from '@/components/layout/bottom-navigation'; 
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { 
-  LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon, UsersRound, Award, Menu as MenuIcon 
+  LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon, UsersRound, Award, Menu as MenuIcon, X 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -29,25 +29,52 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarInset
-} from "@/components/ui/sidebar"; // Assuming this is the custom sidebar system
+  SidebarInset,
+  useSidebar // Import useSidebar
+} from "@/components/ui/sidebar"; 
 
-// Updated Nav Items for Sidebar
 const mainNavItems = [
   { href: '/home', label: 'Home', icon: Home },
   { href: '/directory', label: 'Directory', icon: Users },
   { href: '/prayer', label: 'Prayer Hub', icon: HeartHandshake },
   { href: '/chat', label: 'Chat', icon: MessageCircle },
   { href: '/resources', label: 'Resources', icon: BookOpenText },
-  { href: '/groups', label: 'Groups', icon: UsersRound }, // New
-  { href: '/achievements', label: 'Achievements', icon: Award }, // New
+  { href: '/groups', label: 'Groups', icon: UsersRound }, 
+  { href: '/achievements', label: 'Achievements', icon: Award }, 
 ];
+
+// New component to handle sidebar close on mobile after navigation
+function MobileSidebarMenuItem({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) {
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar(); // Use the hook
+
+  const handleClick = () => {
+    setOpenMobile(false); // Close sidebar on click
+  };
+
+  return (
+    <SidebarMenuItem>
+      <Link href={href} passHref legacyBehavior>
+        <SidebarMenuButton 
+          isActive={pathname.startsWith(href)} 
+          className="justify-start"
+          onClick={handleClick} // Add onClick handler
+        >
+          <Icon className="h-5 w-5" />
+          <span>{label}</span>
+        </SidebarMenuButton>
+      </Link>
+    </SidebarMenuItem>
+  );
+}
+
 
 function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading, logout } = useAuth();
   const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const sidebarContext = useSidebar(); // Get context for mobile sidebar trigger
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -99,15 +126,14 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SidebarProvider defaultOpen={true}> {/* SidebarProvider wraps the layout */}
       <div className="flex min-h-screen bg-background text-foreground">
-        <Sidebar collapsible="icon" className="hidden md:flex md:flex-col border-r border-border"> {/* Desktop Sidebar */}
+        <Sidebar collapsible="icon" className="hidden md:flex md:flex-col border-r border-border"> 
           <SidebarHeader className="p-2 h-16 flex items-center justify-between">
              <Link href="/home" className="flex items-center gap-2 font-semibold text-primary px-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 group-data-[state=collapsed]:hidden"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
                 <span className="font-headline text-xl group-data-[state=collapsed]:hidden">KaddaConnect</span>
              </Link>
-             <SidebarTrigger className="group-data-[state=expanded]:hidden" /> {/* Only show trigger when collapsed */}
+             <SidebarTrigger className="group-data-[state=expanded]:hidden" /> 
           </SidebarHeader>
           <SidebarContent className="flex-grow p-2">
             <SidebarMenu>
@@ -173,9 +199,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
 
-        {/* Mobile Sidebar (Off-Canvas) and Main Content Area */}
-         <SidebarInset className="flex flex-col flex-1"> {/* Main content area */}
-          {/* Mobile Header */}
+         <SidebarInset className="flex flex-col flex-1"> 
           <header className="sticky top-0 z-30 flex md:hidden h-16 items-center justify-between bg-card px-4 border-b border-border">
               <SidebarTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -195,16 +219,15 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
               </Link>
           </header>
           
-          {/* Mobile Off-Canvas Sidebar Content - This uses the same Sidebar structure */}
-          <Sidebar side="left" collapsible="offcanvas" className="md:hidden"> {/* This is the actual sidebar for mobile */}
+          <Sidebar side="left" collapsible="offcanvas" className="md:hidden"> 
             <SidebarHeader className="p-2 h-16 flex items-center justify-between">
-                <Link href="/home" className="flex items-center gap-2 font-semibold text-primary px-2">
+                <Link href="/home" className="flex items-center gap-2 font-semibold text-primary px-2" onClick={() => sidebarContext?.setOpenMobile(false)}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
                   <span className="font-headline text-xl">KaddaConnect</span>
                 </Link>
                 <SidebarTrigger asChild>
                     <Button variant="ghost" size="icon">
-                        <MenuIcon className="h-6 w-6 rotate-90"/> {/* Placeholder, should be X to close */}
+                         <X className="h-6 w-6"/> 
                          <span className="sr-only">Close menu</span>
                     </Button>
                 </SidebarTrigger>
@@ -212,24 +235,16 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarContent className="flex-grow p-2">
               <SidebarMenu>
                 {mainNavItems.map(item => (
-                  <SidebarMenuItem key={`mobile-${item.label}`}>
-                    <Link href={item.href} legacyBehavior passHref>
-                      <SidebarMenuButton isActive={pathname.startsWith(item.href)} className="justify-start">
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
+                  <MobileSidebarMenuItem key={`mobile-${item.label}`} href={item.href} label={item.label} icon={item.icon} />
                 ))}
               </SidebarMenu>
             </SidebarContent>
             <SidebarFooter className="p-2 mt-auto border-t border-border">
-                {/* User info could be duplicated here or handled differently for mobile footer */}
-                <Button variant="ghost" onClick={toggleTheme} aria-label="Toggle theme" className="w-full justify-start p-2 h-auto">
+                <Button variant="ghost" onClick={() => { toggleTheme(); sidebarContext?.setOpenMobile(false); }} aria-label="Toggle theme" className="w-full justify-start p-2 h-auto">
                     {isDarkTheme ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                     <span className="ml-2">Toggle Theme</span>
                 </Button>
-                 <Button variant="ghost" onClick={handleLogout} className="w-full justify-start p-2 h-auto text-destructive hover:text-destructive">
+                 <Button variant="ghost" onClick={() => { handleLogout(); sidebarContext?.setOpenMobile(false); }} className="w-full justify-start p-2 h-auto text-destructive hover:text-destructive">
                     <LogOut className="h-5 w-5" />
                     <span className="ml-2">Logout</span>
                 </Button>
@@ -237,34 +252,31 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
           </Sidebar>
 
           <main className="flex-grow">
-            <div className="p-3 md:p-6">{children}</div>
+            <div className="h-full">{children}</div> {/* Removed outer padding, let page control its padding */}
           </main>
-          {/* BottomNavigation might be removed if the off-canvas sidebar is preferred for mobile */}
-          {/* <BottomNavigation /> */}
+          <BottomNavigation /> 
         </SidebarInset>
       </div>
-    </SidebarProvider>
   );
 }
 
-
 export default function MainAppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={
-      <div className="flex flex-col h-screen bg-background">
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
-          <Skeleton className="h-8 w-32 bg-muted" />
-          <Skeleton className="h-8 w-8 rounded-full bg-muted" />
-        </header>
-        <div className="flex flex-1 flex-col items-center justify-center p-6">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-          <p className="text-muted-foreground">Loading KaddaConnect...</p>
+    <SidebarProvider defaultOpen={true}> {/* defaultOpen controls desktop sidebar state */}
+      <Suspense fallback={
+        <div className="flex flex-col h-screen bg-background">
+          <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+            <Skeleton className="h-8 w-32 bg-muted" />
+            <Skeleton className="h-8 w-8 rounded-full bg-muted" />
+          </header>
+          <div className="flex flex-1 flex-col items-center justify-center p-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <p className="text-muted-foreground">Loading KaddaConnect...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <MainAppLayoutContent>{children}</MainAppLayoutContent>
-    </Suspense>
+      }>
+        <MainAppLayoutContent>{children}</MainAppLayoutContent>
+      </Suspense>
+    </SidebarProvider>
   )
 }
-
-    
