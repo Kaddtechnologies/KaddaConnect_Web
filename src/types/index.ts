@@ -39,7 +39,7 @@ export interface DailyVerse {
   date: string; 
 }
 
-export interface ChatMessage {
+export interface ChatMessage { // This is for the main app chat
   id: string;
   text: string;
   sender: 'user' | 'bot';
@@ -47,7 +47,7 @@ export interface ChatMessage {
   status?: 'loading' | 'error'; 
 }
 
-export interface ChatConversation {
+export interface ChatConversation { // This is for the main app chat
   id: string;
   userId: string;
   title: string;
@@ -147,3 +147,4 @@ export interface SermonSummaryForTool {
   summary?: string;
   topics?: string[];
 }
+
