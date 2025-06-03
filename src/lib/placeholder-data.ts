@@ -407,7 +407,5 @@ export const placeholderUserRsvps: UserRsvp[] = [
   { eventId: 'event1', userId: 'user1', rsvpAt: new Date().toISOString() },
 ];
 
-// Ensure placeholderInterestGroups is also exported if it wasn't before
 // (already added in previous steps, just confirming its presence for context loading)
-export { placeholderInterestGroups };
-
+// export { placeholderInterestGroups }; // This line was causing the duplicate export error
