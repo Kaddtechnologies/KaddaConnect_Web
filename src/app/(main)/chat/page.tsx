@@ -133,15 +133,11 @@ export default function ChatPage() {
         text: msg.text,
       }));
       
-      // TODO: Call a Genkit flow here to retrieve long-term user context from Pinecone
-      // const longTermContextData = await retrieveUserMemoryFlow({ userId: currentUser.id, currentQuery: messageText });
-      const longTermContextData = ""; // Placeholder for now
-
       const response = await askSpiritualChatbot({ 
+        userId: currentUser.id, // Pass userId for memory management
         message: messageText,
         userName: currentUser.displayName.split(' ')[0] || currentUser.displayName,
         history: historyForFlow.slice(0, -1), // Pass history *before* current user message
-        longTermUserContext: longTermContextData
       });
 
       const botMessage: ChatMessage = {

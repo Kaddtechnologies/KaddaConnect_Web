@@ -10,7 +10,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { searchSermonsTool } from './sermon-search-flow'; // Import the sermon search tool
+import { searchSermonsTool } from './sermon-search-flow';
+import { retrieveUserMemoryFromDB, storeUserMemoryInDB } from './user-memory-management-flow'; // Import memory functions
 
 const ChatHistoryMessageSchema = z.object({
   sender: z.enum(['user', 'bot']),
@@ -18,10 +19,11 @@ const ChatHistoryMessageSchema = z.object({
 });
 
 const SpiritualChatInputSchema = z.object({
+  userId: z.string().describe("The unique identifier for the user, for memory retrieval."),
   message: z.string().describe('The current user message to the spiritual chatbot.'),
   userName: z.string().describe("The user's first name."),
   history: z.array(ChatHistoryMessageSchema).describe('The history of the conversation so far IN THE CURRENT SESSION, most recent last. This does not include the current "message" from the user.'),
-  longTermUserContext: z.string().optional().describe('Optional: Key information or summaries remembered about the user from previous interactions across different chat sessions. This helps in personalizing responses based on long-term user journey.')
+  // longTermUserContext is now retrieved by the flow itself.
 });
 export type SpiritualChatInput = z.infer<typeof SpiritualChatInputSchema>;
 
@@ -36,9 +38,18 @@ export async function askSpiritualChatbot(input: SpiritualChatInput): Promise<Sp
 
 const spiritualChatPrompt = ai.definePrompt({
   name: 'spiritualChatPromptThePottersWisdom',
-  input: {schema: SpiritualChatInputSchema},
+  // The input schema for the prompt will now include the retrieved long-term context
+  input: {
+    schema: z.object({
+      userId: z.string(), // Keep for consistency if needed, though not directly used in prompt template if context is passed
+      message: z.string(),
+      userName: z.string(),
+      history: z.array(ChatHistoryMessageSchema),
+      longTermUserContext: z.string().optional().describe('Key information or summaries remembered about the user from previous interactions (retrieved from vector DB). This helps in personalizing responses based on long-term user journey.')
+    })
+  },
   output: {schema: SpiritualChatOutputSchema},
-  tools: [searchSermonsTool], // Add the sermon search tool here
+  tools: [searchSermonsTool],
   prompt: `You are an AI assistant named "The Potter's Wisdom A.I." designed to function as a motivational app with a Christian perspective. Your primary role is to provide emotional support, encouragement, and spiritual guidance to users based on their expressed feelings and situations.
 
 You have access to a tool called 'searchSermonsTool' that allows you to search our church's sermon archive. If a user asks about a particular topic that might have been covered in a sermon (e.g., "What do sermons say about faith?" or "Are there sermons on forgiveness?"), or wants to find a sermon by a specific speaker, or wishes to discuss a past sermon, use this tool to find relevant information. You can then share summaries or key points from the found sermons to help the user or facilitate discussion. If the tool returns sermons, briefly mention them or their key points if it's relevant to the user's query. Do not list all details unless asked.
@@ -60,7 +71,7 @@ Based on the user's input, current conversation history, any long-term context p
 4. Meditation techniques
 5. Proverbs
 
-{{#if history}}
+{{#if history.length}}
 Conversation History (Current Session):
 Use the following previous conversations in THIS CURRENT SESSION to better understand the user's emotions and context:
 {{#each history}}
@@ -71,10 +82,12 @@ No previous conversation history for THIS CURRENT SESSION available.
 {{/if}}
 
 {{#if longTermUserContext}}
-Long-Term User Context:
+Long-Term User Context (from past interactions):
 Additionally, here is some general background information and key points remembered about {{userName}} from previous interactions across different chat sessions that might be relevant:
-{{longTermUserContext}}
-Use this information to further personalize your response and show a deeper understanding of their journey.
+{{{longTermUserContext}}}
+Use this information to further personalize your response and show a deeper understanding of their journey. If the context seems irrelevant to the current query, you don't have to force its use.
+{{else}}
+No specific long-term context available from past interactions for this query.
 {{/if}}
 
 
@@ -194,7 +207,57 @@ const spiritualChatFlow = ai.defineFlow(
     outputSchema: SpiritualChatOutputSchema,
   },
   async (input) => {
-    const {output} = await spiritualChatPrompt(input);
-    return output!;
+    // 1. Retrieve long-term memory for the user
+    let longTermContext = "";
+    try {
+      const memoryOutput = await retrieveUserMemoryFromDB({
+        userId: input.userId,
+        currentQuery: input.message, // Use the current message to find relevant memories
+        limit: 3,
+      });
+      longTermContext = memoryOutput.retrievedContext;
+      if (memoryOutput.debugSnippets && memoryOutput.debugSnippets.length > 0) {
+        console.log("Retrieved snippets for user:", memoryOutput.debugSnippets.map(s => s.text).join(" | "));
+      }
+    } catch (e: any) {
+      console.error("Failed to retrieve user memory:", e.message);
+      // Proceed without long-term memory if retrieval fails
+      longTermContext = "Note: There was an issue retrieving long-term memory for this user.";
+    }
+
+    // 2. Call the LLM prompt with current message, history, and retrieved long-term context
+    const {output: llmOutput} = await spiritualChatPrompt({
+      userId: input.userId,
+      message: input.message,
+      userName: input.userName,
+      history: input.history,
+      longTermUserContext: longTermContext,
+    });
+    
+    const botResponse = llmOutput?.response;
+
+    if (!botResponse) {
+        throw new Error("LLM did not return a response.");
+    }
+
+    // 3. Store the current interaction (user message + bot response) snippet for future memory
+    // This is a simple approach; more complex logic could summarize or select key info.
+    const memorySnippet = `User (${input.userName}): "${input.message}"\nBot (The Potter's Wisdom A.I.): "${botResponse.substring(0, 200)}${botResponse.length > 200 ? '...' : ''}"`;
+    try {
+      await storeUserMemoryInDB({
+        userId: input.userId,
+        textSnippet: memorySnippet,
+        metadata: { 
+          type: 'chatInteraction', 
+          timestamp: new Date().toISOString(),
+          userName: input.userName,
+        },
+      });
+    } catch (e: any) {
+      console.error("Failed to store user memory snippet:", e.message);
+      // Non-critical error, chat can continue
+    }
+
+    return { response: botResponse };
   }
 );
