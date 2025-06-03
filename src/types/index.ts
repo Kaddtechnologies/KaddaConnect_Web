@@ -225,5 +225,30 @@ export interface UserStreak {
   lastActivityDate: string; // ISO string date
 }
 
+// --- Types for Phase 4: Events & RSVP ---
+export interface AppEvent {
+  id: string;
+  title: string;
+  description: string;
+  category: 'Worship' | 'Community' | 'Workshop' | 'Outreach' | 'Youth' | 'Other';
+  startTime: string; // ISO string date
+  endTime?: string; // ISO string date
+  location: string; // Could be "Online" or a physical address
+  organizerInfo: {
+    name: string; // e.g., "Church Office", "Youth Ministry", "Jane Doe"
+    contact?: string; // Optional email or phone
+  };
+  coverImageUrl?: string;
+  dataAiHint?: string;
+  rsvpCount: number;
+  maxAttendees?: number; // Optional, if there's a limit
+  isOnline: boolean; // True if the event is virtual
+  meetingUrl?: string; // If online, link to meeting
+}
 
+export interface UserRsvp {
+  eventId: string;
+  userId: string;
+  rsvpAt: string; // ISO string date
+}
     

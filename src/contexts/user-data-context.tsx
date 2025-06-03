@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { Post, Member, OldPrayerRequest, UserProfile, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession, ChatMessage, ChatConversation, Sermon, SermonNote } from '@/types';
+import type { Post, Member, OldPrayerRequest, UserProfile, DailyVerse, Article, UserArticleInteraction, UserPrayer, PrayerNote, PrayerSession, ChatMessage, ChatConversation, Sermon, SermonNote, InterestGroup, UserBadge, AppEvent, UserRsvp } from '@/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { 
   placeholderPosts, 
@@ -15,7 +15,10 @@ import {
   placeholderPrayerSessions,
   placeholderChatConversations,
   placeholderSermons,
-  placeholderSermonNotes
+  placeholderSermonNotes,
+  placeholderInterestGroups, // Added for Phase 3
+  placeholderAppEvents, // Added for Phase 4
+  placeholderUserRsvps // Added for Phase 4
 } from '@/lib/placeholder-data';
 import { useAuth } from './auth-context';
 
@@ -23,13 +26,13 @@ interface UserDataContextType {
   // Existing data
   posts: Post[];
   members: Member[];
-  oldPrayerRequests: OldPrayerRequest[]; // To be phased out or kept for archival?
+  oldPrayerRequests: OldPrayerRequest[];
   dailyVerse: DailyVerse | null;
   currentUserProfile: UserProfile | null;
   isLoading: boolean; 
-  addPost: (content: string, imageUrl?: string) => void;
+  addPost: (content: string, imageUrl?: string, dataAiHint?: string) => void;
   toggleLikePost: (postId: string) => void;
-  addOldPrayerRequest: (requestText: string) => void; // To be phased out
+  addOldPrayerRequest: (requestText: string) => void;
   updateUserProfile: (updatedProfileData: Partial<UserProfile>) => void;
   getMemberById: (id: string) => Member | undefined;
 
@@ -37,7 +40,7 @@ interface UserDataContextType {
   articles: Article[];
   userArticleInteractions: UserArticleInteraction[];
   userPrayers: UserPrayer[];
-  prayerNotes: PrayerNote[];
+  prayerNotes: PrayerNote[]; // These are for UserPrayers (personal prayer journal)
   prayerSessions: PrayerSession[];
 
   // Prayer Module Functions
@@ -60,14 +63,14 @@ interface UserDataContextType {
   activeChatConversationId: string | null;
   setActiveChatConversationId: (conversationId: string | null) => void;
   getActiveConversation: () => ChatConversation | undefined;
-  saveNewChatConversation: (messages: ChatMessage[], title?: string, existingConvoId?: string | null) => string; // Returns new conversation ID
+  saveNewChatConversation: (messages: ChatMessage[], title?: string, existingConvoId?: string | null) => string; 
   addMessageToChatConversation: (conversationId: string, message: ChatMessage) => void;
   deleteChatConversation: (conversationId: string) => void;
   renameChatConversation: (conversationId: string, newTitle: string) => void;
 
   // Sermon & Sermon Notes Module Data & Functions
   sermons: Sermon[];
-  userSermonNotes: SermonNote[];
+  userSermonNotes: SermonNote[]; // These are notes users take on public sermons
   getSermonById: (sermonId: string) => Sermon | undefined;
   addSermon: (sermonData: Omit<Sermon, 'id'>) => void;
   updateSermon: (sermonId: string, updates: Partial<Sermon>) => void;
@@ -75,6 +78,21 @@ interface UserDataContextType {
   addSermonNote: (sermonId: string, content: string) => void;
   updateSermonNote: (noteId: string, content: string) => void;
   deleteSermonNote: (noteId: string) => void;
+
+  // Phase 3: Groups & Gamification
+  interestGroups: InterestGroup[];
+  userBadges: UserBadge[]; // Placeholder for now
+  getGroupById: (groupId: string) => InterestGroup | undefined;
+  // More group/gamification functions to be added
+
+  // Phase 4: Events & RSVP
+  appEvents: AppEvent[];
+  userRsvps: UserRsvp[];
+  getAppEventById: (eventId: string) => AppEvent | undefined;
+  rsvpToEvent: (eventId: string) => void;
+  cancelRsvpFromEvent: (eventId: string) => void;
+  isUserRsvpedToEvent: (eventId: string) => boolean;
+  // More event functions to be added (e.g., create event)
 }
 
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
@@ -98,9 +116,16 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
   const [activeChatConversationId, setActiveChatConversationIdState] = useState<string | null>(null);
 
-  // Sermon Notes State
   const [sermons, setSermonsState] = useState<Sermon[]>([]);
   const [userSermonNotes, setUserSermonNotes] = useState<SermonNote[]>([]);
+
+  // Phase 3 State
+  const [interestGroups, setInterestGroups] = useState<InterestGroup[]>([]);
+  const [userBadges, setUserBadges] = useState<UserBadge[]>([]); // Initialize with placeholder if needed
+
+  // Phase 4 State
+  const [appEvents, setAppEvents] = useState<AppEvent[]>([]);
+  const [userRsvps, setUserRsvps] = useState<UserRsvp[]>([]);
 
 
   useEffect(() => {
@@ -114,6 +139,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       setDailyVerse(placeholderDailyVerse);
       setArticles(placeholderArticles);
       setSermonsState(placeholderSermons.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setInterestGroups(placeholderInterestGroups); // Load Phase 3 data
+      setAppEvents(placeholderAppEvents); // Load Phase 4 data
       
       if (authUser) {
         let profile = placeholderMembers.find(m => m.id === authUser.id);
@@ -134,6 +161,14 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         setPrayerSessions(placeholderPrayerSessions.filter(session => session.userId === authUser.id));
         setChatConversations(placeholderChatConversations.filter(convo => convo.userId === authUser.id).sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
         setUserSermonNotes(placeholderSermonNotes.filter(note => note.userId === authUser.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        setUserRsvps(placeholderUserRsvps.filter(rsvp => rsvp.userId === authUser.id)); // Load user-specific RSVPs
+        
+        // Placeholder for user badges - can be expanded
+        setUserBadges([
+            { id: 'badge1', name: 'Prayer Warrior', description: 'Prayed for 7 consecutive days.', isAchieved: true, dateAchieved: new Date().toISOString(), icon: 'ShieldCheck' },
+            { id: 'badge2', name: 'Community Connector', description: 'Joined 3 interest groups.', isAchieved: false, progress: 33, icon: 'Users' },
+        ]);
+
         setActiveChatConversationIdState(null);
 
       } else {
@@ -144,6 +179,10 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         setPrayerSessions([]);
         setChatConversations([]);
         setUserSermonNotes([]);
+        setInterestGroups([]);
+        setUserBadges([]);
+        setAppEvents([]);
+        setUserRsvps([]);
         setActiveChatConversationIdState(null);
       }
       setIsLoading(false);
@@ -154,7 +193,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [authUser, authLoading]);
 
-  const addPost = (content: string, imageUrl?: string) => {
+  const addPost = (content: string, imageUrl?: string, dataAiHint?: string) => {
     if (!currentUserProfile) return;
     const newPost: Post = {
       id: `post-${Date.now()}`,
@@ -164,7 +203,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         profilePictureUrl: currentUserProfile.profilePictureUrl 
       },
       content,
-      imageUrl,
+      imageUrl: imageUrl || (content.length < 50 ? undefined : `https://placehold.co/600x400.png?text=${encodeURIComponent(content.substring(0,20))}`), // Placeholder image if long content
+      dataAiHint: dataAiHint || "social post",
       likes: 0,
       likedByMe: false,
       createdAt: new Date().toISOString(),
@@ -440,6 +480,50 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  // Phase 3: Groups Functions
+  const getGroupById = useCallback((groupId: string): InterestGroup | undefined => {
+      return interestGroups.find(g => g.id === groupId);
+  }, [interestGroups]);
+
+  // Phase 4: Events & RSVP Functions
+  const getAppEventById = useCallback((eventId: string): AppEvent | undefined => {
+    return appEvents.find(event => event.id === eventId);
+  }, [appEvents]);
+
+  const rsvpToEvent = (eventId: string) => {
+    if (!currentUserProfile) return;
+    const event = appEvents.find(e => e.id === eventId);
+    if (!event) return;
+
+    // Check if already RSVP'd
+    if (userRsvps.some(rsvp => rsvp.eventId === eventId && rsvp.userId === currentUserProfile.id)) return;
+    
+    // Check max attendees
+    if (event.maxAttendees && event.rsvpCount >= event.maxAttendees) {
+        // Handle full event - maybe a toast message
+        console.warn("Event is full");
+        return;
+    }
+
+    setAppEvents(prev => prev.map(e => e.id === eventId ? { ...e, rsvpCount: e.rsvpCount + 1 } : e));
+    setUserRsvps(prev => [...prev, { eventId, userId: currentUserProfile.id, rsvpAt: new Date().toISOString() }]);
+  };
+
+  const cancelRsvpFromEvent = (eventId: string) => {
+    if (!currentUserProfile) return;
+    // Check if actually RSVP'd
+    if (!userRsvps.some(rsvp => rsvp.eventId === eventId && rsvp.userId === currentUserProfile.id)) return;
+
+    setAppEvents(prev => prev.map(e => e.id === eventId ? { ...e, rsvpCount: Math.max(0, e.rsvpCount - 1) } : e));
+    setUserRsvps(prev => prev.filter(rsvp => !(rsvp.eventId === eventId && rsvp.userId === currentUserProfile.id)));
+  };
+  
+  const isUserRsvpedToEvent = useCallback((eventId: string): boolean => {
+    if (!currentUserProfile) return false;
+    return userRsvps.some(rsvp => rsvp.eventId === eventId && rsvp.userId === currentUserProfile.id);
+  }, [userRsvps, currentUserProfile]);
+
+
   return (
     <UserDataContext.Provider value={{ 
       posts, members, oldPrayerRequests, dailyVerse, currentUserProfile, isLoading,
@@ -452,7 +536,9 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       getActiveConversation, saveNewChatConversation, addMessageToChatConversation,
       deleteChatConversation, renameChatConversation,
       sermons, userSermonNotes, getSermonById, addSermon, updateSermon, getNotesForSermon,
-      addSermonNote, updateSermonNote, deleteSermonNote
+      addSermonNote, updateSermonNote, deleteSermonNote,
+      interestGroups, userBadges, getGroupById, // Phase 3
+      appEvents, userRsvps, getAppEventById, rsvpToEvent, cancelRsvpFromEvent, isUserRsvpedToEvent // Phase 4
     }}>
       {children}
     </UserDataContext.Provider>
@@ -466,3 +552,4 @@ export const useUserData = () => {
   }
   return context;
 };
+

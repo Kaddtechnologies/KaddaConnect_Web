@@ -3,14 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, UsersRound, Award } from 'lucide-react';
+import { Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, UsersRound, Award, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // These items might change if mobile uses an off-canvas sidebar instead
 const navItems = [
   { href: '/home', label: 'Home', icon: Home },
-  { href: '/groups', label: 'Groups', icon: UsersRound }, // New
-  { href: '/prayer', label: 'Prayer', icon: HeartHandshake },
+  { href: '/groups', label: 'Groups', icon: UsersRound }, 
+  { href: '/events', label: 'Events', icon: CalendarClock },
   { href: '/chat', label: 'Chat', icon: MessageCircle },
   { href: '/profile', label: 'Me', icon: UserCircle },
 ];

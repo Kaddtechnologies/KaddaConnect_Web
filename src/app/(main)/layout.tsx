@@ -7,7 +7,7 @@ import BottomNavigation from '@/components/layout/bottom-navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { 
-  LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon, UsersRound, Award, Menu as MenuIcon, X, PanelLeft 
+  LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon, UsersRound, Award, Menu as MenuIcon, X, PanelLeft, CalendarClock 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -36,11 +36,12 @@ import {
 
 const mainNavItems = [
   { href: '/home', label: 'Home', icon: Home },
-  { href: '/directory', label: 'Directory', icon: Users },
-  { href: '/prayer', label: 'Prayer Hub', icon: HeartHandshake },
   { href: '/chat', label: 'Chat', icon: MessageCircle },
+  { href: '/prayer', label: 'Prayer Hub', icon: HeartHandshake },
   { href: '/resources', label: 'Resources', icon: BookOpenText },
   { href: '/groups', label: 'Groups', icon: UsersRound }, 
+  { href: '/events', label: 'Events', icon: CalendarClock },
+  { href: '/directory', label: 'Directory', icon: Users },
   { href: '/achievements', label: 'Achievements', icon: Award }, 
 ];
 
@@ -107,16 +108,16 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
 
   if (isLoading || (!isLoading && !user)) {
     return (
-      <div className="flex min-h-screen bg-background text-foreground"> {/* <-- UPDATED CLASS */}
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 w-full">
-          <Skeleton className="h-8 w-32 bg-muted" />
-          <Skeleton className="h-8 w-8 rounded-full bg-muted" />
-        </header>
-        <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16"> {/* Adjusted to be absolute and account for header */}
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-          <p className="text-muted-foreground">Authenticating...</p>
+        <div className="flex min-h-screen bg-background text-foreground">
+            <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 w-full">
+                <Skeleton className="h-8 w-32 bg-muted" />
+                <Skeleton className="h-8 w-8 rounded-full bg-muted" />
+            </header>
+            <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <p className="text-muted-foreground">Authenticating...</p>
+            </div>
         </div>
-      </div>
     );
   }
   
@@ -159,7 +160,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                    <Button variant="ghost" className="w-full justify-start group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 group-data-[state=collapsed]:aspect-square p-2 h-auto">
                         <Avatar className="h-9 w-9 group-data-[state=collapsed]:h-7 group-data-[state=collapsed]:w-7">
-                            <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
+                            <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName || 'User'} data-ai-hint="profile person" />
                             <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="ml-2 text-left group-data-[state=collapsed]:hidden">
@@ -214,7 +215,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
               </Link>
               <Link href="/profile">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
+                    <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName || 'User'} data-ai-hint="profile person" />
                     <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
               </Link>
@@ -265,12 +266,12 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
   return (
     <SidebarProvider defaultOpen={true}> 
       <Suspense fallback={
-        <div className="flex min-h-screen bg-background text-foreground"> {/* <-- UPDATED CLASS */}
+        <div className="flex min-h-screen bg-background text-foreground">
           <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 w-full">
             <Skeleton className="h-8 w-32 bg-muted" />
             <Skeleton className="h-8 w-8 rounded-full bg-muted" />
           </header>
-          <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16"> {/* Adjusted to be absolute and account for header */}
+          <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             <p className="text-muted-foreground">Loading KaddaConnect...</p>
           </div>
