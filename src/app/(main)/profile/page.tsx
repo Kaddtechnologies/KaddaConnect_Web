@@ -24,7 +24,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="container mx-auto max-w-lg py-0 md:py-6">
+    <div className="container mx-auto max-w-2xl py-0 md:py-6">
       <div className="mb-6 md:mb-8 text-center">
         <UserCircle className="mx-auto h-12 w-12 text-primary mb-3" />
         <h1 className="text-3xl md:text-4xl font-headline text-primary mb-2">Your Profile</h1>
