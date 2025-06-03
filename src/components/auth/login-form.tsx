@@ -13,8 +13,8 @@ import { Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
   const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('user@example.com'); // Hardcoded email
+  const [password, setPassword] = useState('password'); // Hardcoded password
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
