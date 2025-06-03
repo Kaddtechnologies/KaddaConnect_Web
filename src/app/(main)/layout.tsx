@@ -108,12 +108,12 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
 
   if (isLoading || (!isLoading && !user)) {
     return (
-        <div className="flex min-h-screen bg-background text-foreground">
+        <div className="flex min-h-screen bg-background text-foreground"> {/* Updated class */}
             <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 w-full">
                 <Skeleton className="h-8 w-32 bg-muted" />
                 <Skeleton className="h-8 w-8 rounded-full bg-muted" />
             </header>
-            <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16">
+            <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16"> {/* Adjusted for header */}
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                 <p className="text-muted-foreground">Authenticating...</p>
             </div>
@@ -135,7 +135,7 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 group-data-[state=collapsed]:hidden"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
                 <span className="font-headline text-xl group-data-[state=collapsed]:hidden">KaddaConnect</span>
              </Link>
-             <SidebarTrigger className="group-data-[state=expanded]:hidden h-8 w-8" /> 
+             <SidebarTrigger className="h-8 w-8" /> {/* Always visible toggle */}
           </SidebarHeader>
           <SidebarContent className="flex-grow p-2">
             <SidebarMenu>
@@ -266,12 +266,12 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
   return (
     <SidebarProvider defaultOpen={true}> 
       <Suspense fallback={
-        <div className="flex min-h-screen bg-background text-foreground">
+        <div className="flex min-h-screen bg-background text-foreground"> {/* Updated class */}
           <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 w-full">
             <Skeleton className="h-8 w-32 bg-muted" />
             <Skeleton className="h-8 w-8 rounded-full bg-muted" />
           </header>
-          <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16">
+          <div className="absolute inset-0 flex flex-1 flex-col items-center justify-center p-6 pt-16"> {/* Adjusted for header */}
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin lucide lucide-loader-circle mb-4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             <p className="text-muted-foreground">Loading KaddaConnect...</p>
           </div>
