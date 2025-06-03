@@ -65,11 +65,12 @@ interface UserDataContextType {
   deleteChatConversation: (conversationId: string) => void;
   renameChatConversation: (conversationId: string, newTitle: string) => void;
 
-  // Sermon Notes Module Data & Functions
+  // Sermon & Sermon Notes Module Data & Functions
   sermons: Sermon[];
   userSermonNotes: SermonNote[];
   getSermonById: (sermonId: string) => Sermon | undefined;
   addSermon: (sermonData: Omit<Sermon, 'id'>) => void;
+  updateSermon: (sermonId: string, updates: Partial<Sermon>) => void;
   getNotesForSermon: (sermonId: string) => SermonNote[];
   addSermonNote: (sermonId: string, content: string) => void;
   updateSermonNote: (noteId: string, content: string) => void;
@@ -112,7 +113,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       setOldPrayerRequests(placeholderOldPrayerRequests);
       setDailyVerse(placeholderDailyVerse);
       setArticles(placeholderArticles);
-      setSermonsState(placeholderSermons.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())); // Sort sermons by date desc
+      setSermonsState(placeholderSermons.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       
       if (authUser) {
         let profile = placeholderMembers.find(m => m.id === authUser.id);
@@ -381,7 +382,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Sermon Notes Module Functions
+  // Sermon & Sermon Notes Module Functions
   const getSermonById = useCallback((sermonId: string): Sermon | undefined => {
     return sermons.find(s => s.id === sermonId);
   }, [sermons]);
@@ -392,6 +393,14 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       id: `sermon-${Date.now()}`,
     };
     setSermonsState(prev => [newSermon, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  };
+  
+  const updateSermon = (sermonId: string, updates: Partial<Sermon>) => {
+    if (!currentUserProfile) return;
+    setSermonsState(prevSermons =>
+      prevSermons.map(s => (s.id === sermonId ? { ...s, ...updates } : s))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    );
   };
 
   const getNotesForSermon = useCallback((sermonId: string): SermonNote[] => {
@@ -442,7 +451,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       chatConversations, activeChatConversationId, setActiveChatConversationId,
       getActiveConversation, saveNewChatConversation, addMessageToChatConversation,
       deleteChatConversation, renameChatConversation,
-      sermons, userSermonNotes, getSermonById, addSermon, getNotesForSermon,
+      sermons, userSermonNotes, getSermonById, addSermon, updateSermon, getNotesForSermon,
       addSermonNote, updateSermonNote, deleteSermonNote
     }}>
       {children}
