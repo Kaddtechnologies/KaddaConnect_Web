@@ -1,4 +1,5 @@
 
+
 export interface UserProfile {
   id: string;
   email?: string; 
@@ -148,3 +149,81 @@ export interface SermonSummaryForTool {
   topics?: string[];
 }
 
+// --- Types for Phase 3: Groups & Gamification ---
+
+export interface InterestGroup {
+  id: string;
+  name: string;
+  description: string;
+  category: 'Hobbies' | 'Ministries' | 'Careers' | 'Support' | 'Other';
+  memberCount: number; // Denormalized for quick display, or calculated
+  createdBy: string; // userId of creator
+  createdAt: string; // ISO string date
+  // For actual implementation, you'd likely have a subcollection for members in Firestore
+  members?: string[]; // Array of userIds (for mock data)
+  groupChatId?: string; // Link to a chat collection in Firestore
+  // events, media galleries would be separate collections linked by groupId
+  coverImageUrl?: string;
+  dataAiHint?: string;
+}
+
+export interface GroupMember { // More detailed than just userId if needed for roles
+  userId: string;
+  groupId: string;
+  role: 'admin' | 'member';
+  joinedAt: string; // ISO string date
+}
+
+export interface GroupChatMessage {
+  id: string;
+  groupId: string;
+  userId: string;
+  userName: string; // Denormalized for display
+  userAvatar?: string; // Denormalized for display
+  text: string;
+  timestamp: string; // ISO string date
+  // reactions, etc.
+}
+
+export interface GroupEvent {
+  id: string;
+  groupId: string;
+  title: string;
+  description: string;
+  startTime: string; // ISO string date
+  endTime?: string; // ISO string date
+  location?: string;
+  createdBy: string; // userId
+}
+
+export interface GroupMediaItem {
+  id: string;
+  groupId: string;
+  userId: string; // Uploader
+  type: 'image' | 'video';
+  url: string; // Firebase Storage URL
+  caption?: string;
+  uploadedAt: string; // ISO string date
+}
+
+export interface UserBadge {
+  id: string; // e.g., 'prayer-warrior', 'connector'
+  name: string;
+  description: string;
+  isAchieved: boolean;
+  dateAchieved?: string; // ISO string date
+  icon?: string; // Lucide icon name or path to custom icon
+  progress?: number; // Optional: 0-100 for badges with progress
+}
+
+// For tracking streaks
+export interface UserStreak {
+  userId: string;
+  type: 'prayer' | 'post' | 'comment'; // Can be expanded
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityDate: string; // ISO string date
+}
+
+
+    

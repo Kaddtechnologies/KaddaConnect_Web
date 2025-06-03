@@ -1,12 +1,14 @@
 
 "use client";
-import { useEffect, Suspense, useState } from 'react';
+import { useEffect, Suspense, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import BottomNavigation from '@/components/layout/bottom-navigation';
+import BottomNavigation from '@/components/layout/bottom-navigation'; // Will be reviewed if sidebar handles mobile well
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon } from 'lucide-react';
+import { 
+  LogOut, Settings, Home, Users, HeartHandshake, UserCircle, BookOpenText, MessageCircle, Sun, Moon, UsersRound, Award, Menu as MenuIcon 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -17,21 +19,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarTrigger,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarInset
+} from "@/components/ui/sidebar"; // Assuming this is the custom sidebar system
 
-
-const navItems = [
+// Updated Nav Items for Sidebar
+const mainNavItems = [
   { href: '/home', label: 'Home', icon: Home },
   { href: '/directory', label: 'Directory', icon: Users },
   { href: '/prayer', label: 'Prayer Hub', icon: HeartHandshake },
   { href: '/chat', label: 'Chat', icon: MessageCircle },
   { href: '/resources', label: 'Resources', icon: BookOpenText },
+  { href: '/groups', label: 'Groups', icon: UsersRound }, // New
+  { href: '/achievements', label: 'Achievements', icon: Award }, // New
 ];
 
 function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading, logout } = useAuth();
-  const [isDarkTheme, setIsDarkTheme] = useState(true); // Default to dark
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -39,7 +55,6 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, router]);
 
-  // Handle theme preference
   useEffect(() => {
     const storedTheme = localStorage.getItem('kaddaconnect-theme');
     if (storedTheme) {
@@ -48,7 +63,6 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
       document.documentElement.classList.toggle('dark', newTheme);
       document.documentElement.classList.toggle('light', !newTheme);
     } else {
-      // Default to system preference or dark
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setIsDarkTheme(prefersDark);
       document.documentElement.classList.toggle('dark', prefersDark);
@@ -63,7 +77,6 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.toggle('dark', newThemeIsDark);
     document.documentElement.classList.toggle('light', !newThemeIsDark);
   };
-
 
   if (isLoading || (!isLoading && !user)) {
     return (
@@ -86,88 +99,151 @@ function MainAppLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      {/* Desktop Header */}
-      <header className="sticky top-0 z-40 hidden md:flex h-16 items-center gap-4 border-b border-border bg-card px-6">
-        <Link href="/home" className="flex items-center gap-2 font-semibold text-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
-          <span className="font-headline text-xl">KaddaConnect</span>
-        </Link>
-        <nav className="flex-1_hidden md:flex flex-row items-center gap-5 text-sm font-medium ml-8">
-          {navItems.map(item => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`transition-colors hover:text-primary ${pathname.startsWith(item.href) ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="ml-auto flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="rounded-full">
-            {isDarkTheme ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full border-2 border-transparent hover:border-primary/50">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
-                  <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
+    <SidebarProvider defaultOpen={true}> {/* SidebarProvider wraps the layout */}
+      <div className="flex min-h-screen bg-background text-foreground">
+        <Sidebar collapsible="icon" className="hidden md:flex md:flex-col border-r border-border"> {/* Desktop Sidebar */}
+          <SidebarHeader className="p-2 h-16 flex items-center justify-between">
+             <Link href="/home" className="flex items-center gap-2 font-semibold text-primary px-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 group-data-[state=collapsed]:hidden"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
+                <span className="font-headline text-xl group-data-[state=collapsed]:hidden">KaddaConnect</span>
+             </Link>
+             <SidebarTrigger className="group-data-[state=expanded]:hidden" /> {/* Only show trigger when collapsed */}
+          </SidebarHeader>
+          <SidebarContent className="flex-grow p-2">
+            <SidebarMenu>
+              {mainNavItems.map(item => (
+                <SidebarMenuItem key={item.label}>
+                  <Link href={item.href} legacyBehavior passHref>
+                    <SidebarMenuButton 
+                        isActive={pathname.startsWith(item.href)} 
+                        tooltip={{ children: item.label, side: 'right', align: 'center' }}
+                        className="justify-start"
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span className="group-data-[state=collapsed]:hidden">{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter className="p-2 mt-auto border-t border-border">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                   <Button variant="ghost" className="w-full justify-start group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 group-data-[state=collapsed]:aspect-square p-2 h-auto">
+                        <Avatar className="h-9 w-9 group-data-[state=collapsed]:h-7 group-data-[state=collapsed]:w-7">
+                            <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
+                            <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="ml-2 text-left group-data-[state=collapsed]:hidden">
+                            <p className="text-sm font-medium leading-none">{user?.displayName}</p>
+                            <p className="text-xs leading-none text-muted-foreground truncate max-w-[100px]">{user?.email}</p>
+                        </div>
+                   </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="top" className="w-56 mb-1 ml-1">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user?.displayName}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer">
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="cursor-not-allowed">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings (soon)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+               <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="rounded-full mt-2 w-full justify-start group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 group-data-[state=collapsed]:aspect-square p-2 h-auto">
+                {isDarkTheme ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                <span className="ml-2 group-data-[state=collapsed]:hidden">Toggle Theme</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.displayName}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="cursor-pointer">
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-               <DropdownMenuItem disabled className="cursor-not-allowed">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings (soon)
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
+          </SidebarFooter>
+        </Sidebar>
 
-      <main className="flex-grow pb-20 md:pb-0 md:pt-0">
-        {/* Mobile Header */}
-        <div className="md:hidden sticky top-0 z-30 flex items-center justify-between h-16 bg-card px-4 border-b border-border">
-            <Link href="/home" className="flex items-center gap-2 font-semibold text-primary">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
-              <span className="font-headline text-lg">KaddaConnect</span>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="rounded-full h-9 w-9">
-                 {isDarkTheme ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-              <Link href="/profile">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
-                  <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
+        {/* Mobile Sidebar (Off-Canvas) and Main Content Area */}
+         <SidebarInset className="flex flex-col flex-1"> {/* Main content area */}
+          {/* Mobile Header */}
+          <header className="sticky top-0 z-30 flex md:hidden h-16 items-center justify-between bg-card px-4 border-b border-border">
+              <SidebarTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MenuIcon className="h-6 w-6" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SidebarTrigger>
+              <Link href="/home" className="flex items-center gap-2 font-semibold text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
+                <span className="font-headline text-lg">KaddaConnect</span>
               </Link>
-            </div>
-        </div>
-        <div className="p-3 md:p-6">{children}</div>
-      </main>
-      <BottomNavigation />
-    </div>
+              <Link href="/profile">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/80x80.png?text=${user?.displayName?.charAt(0)}`} alt={user?.displayName} data-ai-hint="profile person" />
+                    <AvatarFallback className="bg-muted text-muted-foreground">{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+              </Link>
+          </header>
+          
+          {/* Mobile Off-Canvas Sidebar Content - This uses the same Sidebar structure */}
+          <Sidebar side="left" collapsible="offcanvas" className="md:hidden"> {/* This is the actual sidebar for mobile */}
+            <SidebarHeader className="p-2 h-16 flex items-center justify-between">
+                <Link href="/home" className="flex items-center gap-2 font-semibold text-primary px-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>
+                  <span className="font-headline text-xl">KaddaConnect</span>
+                </Link>
+                <SidebarTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <MenuIcon className="h-6 w-6 rotate-90"/> {/* Placeholder, should be X to close */}
+                         <span className="sr-only">Close menu</span>
+                    </Button>
+                </SidebarTrigger>
+            </SidebarHeader>
+            <SidebarContent className="flex-grow p-2">
+              <SidebarMenu>
+                {mainNavItems.map(item => (
+                  <SidebarMenuItem key={`mobile-${item.label}`}>
+                    <Link href={item.href} legacyBehavior passHref>
+                      <SidebarMenuButton isActive={pathname.startsWith(item.href)} className="justify-start">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
+            <SidebarFooter className="p-2 mt-auto border-t border-border">
+                {/* User info could be duplicated here or handled differently for mobile footer */}
+                <Button variant="ghost" onClick={toggleTheme} aria-label="Toggle theme" className="w-full justify-start p-2 h-auto">
+                    {isDarkTheme ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                    <span className="ml-2">Toggle Theme</span>
+                </Button>
+                 <Button variant="ghost" onClick={handleLogout} className="w-full justify-start p-2 h-auto text-destructive hover:text-destructive">
+                    <LogOut className="h-5 w-5" />
+                    <span className="ml-2">Logout</span>
+                </Button>
+            </SidebarFooter>
+          </Sidebar>
+
+          <main className="flex-grow">
+            <div className="p-3 md:p-6">{children}</div>
+          </main>
+          {/* BottomNavigation might be removed if the off-canvas sidebar is preferred for mobile */}
+          {/* <BottomNavigation /> */}
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
 
@@ -190,3 +266,5 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
     </Suspense>
   )
 }
+
+    
