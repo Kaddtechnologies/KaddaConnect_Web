@@ -45,7 +45,7 @@ export default function ProfileForm() {
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-xl rounded-xl">
+    <Card className="w-full  mx-auto shadow-xl rounded-xl">
       <CardHeader className="w-full">
         <CardTitle className="text-2xl font-headline">Edit Your Profile</CardTitle>
         <CardDescription>Keep your community profile up to date.</CardDescription>

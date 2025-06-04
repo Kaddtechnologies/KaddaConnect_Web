@@ -23,7 +23,7 @@ export default function DirectoryPage() {
   }, [members, searchTerm]);
 
   return (
-    <div className="container mx-auto max-w-4xl py-0 md:py-6">
+    <div className="container mx-auto pb-6 py-0 md:py-6">
       <div className="mb-6 md:mb-8 text-center">
         <h1 className="text-3xl md:text-4xl font-headline text-primary mb-2">Member Directory</h1>
         <p className="text-muted-foreground">Find and connect with members of our community.</p>
