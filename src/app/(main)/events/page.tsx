@@ -52,7 +52,7 @@ export default function EventsPage() {
   
   if (pageLoading) {
     return (
-      <div className="container mx-auto max-w-4xl py-8 text-center">
+      <div className="container mx-auto  py-8 text-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
         <p className="text-muted-foreground">Loading events...</p>
       </div>
@@ -61,7 +61,7 @@ export default function EventsPage() {
 
 
   return (
-    <div className="container mx-auto max-w-4xl py-0 md:py-6">
+    <div className="container mx-auto  py-0 md:py-6">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-8 gap-4">
         <div className="text-center md:text-left">
           <h1 className="text-3xl md:text-4xl font-headline text-primary mb-2 flex items-center">

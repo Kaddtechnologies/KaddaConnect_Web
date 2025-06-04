@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUserData } from '@/contexts/user-data-context';
 import type { Sermon, SermonNote, ChatMessage as SermonChatMessage } from '@/types'; // Renamed ChatMessage to avoid conflict
@@ -19,19 +18,19 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-import { askSermonChatbot } from '@/ai/flows/sermon-contextual-chat-flow';
-import { generateSermonSummary } from '@/ai/flows/sermon-analysis-flow';
+import { askSermonChatbot } from '@/ai/actions/sermon-chat-action';
+import { generateSermonSummary } from '@/ai/actions/sermon-analysis-action';
 
 // Re-usable Note Item component
 const SermonNoteItem = ({ note, onEdit, onDelete }: { note: SermonNote, onEdit: () => void, onDelete: () => void }) => (
   <div className="p-4 bg-muted/30 rounded-lg shadow-sm border border-border/50">
-    <p className="text-sm text-card-foreground whitespace-pre-wrap">{note.content}</p>
-    <div className="flex justify-between items-center mt-3 pt-2 border-t border-border/30">
-      <p className="text-xs text-muted-foreground">
+    <p className="text-sm text-card-foreground whitespace-pre-wrap break-words">{note.content}</p>
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mt-3 pt-2 border-t border-border/30">
+      <p className="text-xs text-muted-foreground flex-shrink min-w-0 break-words">
         {format(parseISO(note.createdAt), 'MMM d, yyyy, HH:mm')}
         {note.updatedAt && ` (edited ${formatDistanceToNow(parseISO(note.updatedAt), { addSuffix: true })})`}
       </p>
-      <div className="flex gap-1">
+      <div className="flex gap-1 flex-shrink-0 self-end sm:self-center">
         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={onEdit}>
           <Edit2 className="h-4 w-4" /> <span className="sr-only">Edit Note</span>
         </Button>
@@ -61,7 +60,7 @@ const SermonNoteEditor = ({ initialContent = '', sermonTitle, onSave, onCancel, 
   return (
     <Card className="shadow-md rounded-xl border-primary/30">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-headline">{isEditing ? "Edit Note" : `Add Note for "${sermonTitle}"`}</CardTitle>
+        <CardTitle className="text-lg font-headline break-words pr-2">{isEditing ? "Edit Note" : `Add Note for "${sermonTitle}"`}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <Textarea
@@ -72,13 +71,13 @@ const SermonNoteEditor = ({ initialContent = '', sermonTitle, onSave, onCancel, 
           className="text-sm min-h-[80px] bg-card/50 focus:border-primary"
           autoFocus={isEditing}
         />
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
           {onCancel && (
-            <Button variant="outline" size="sm" onClick={onCancel}>
+            <Button variant="outline" size="sm" onClick={onCancel} className="w-full sm:w-auto">
               <Ban className="h-4 w-4 mr-2" /> Cancel
             </Button>
           )}
-          <Button onClick={handleSave} size="sm" disabled={!content.trim()} className="bg-primary hover:bg-primary/90">
+          <Button onClick={handleSave} size="sm" disabled={!content.trim()} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
             <Save className="h-4 w-4 mr-2" /> {isEditing ? "Save Changes" : "Add Note"}
           </Button>
         </div>
@@ -113,7 +112,7 @@ export default function SermonDetailPage() {
   const [sermonChatInput, setSermonChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const sermonChatScrollRef = React.useRef<HTMLDivElement>(null);
+  const sermonChatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (sermonId && !dataLoading) {
@@ -272,7 +271,7 @@ export default function SermonDetailPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl py-0 md:py-6 animate-fadeIn">
+    <div className="container mx-auto  py-0 md:py-6 animate-fadeIn">
       <Button onClick={() => router.push('/resources')} variant="outline" size="sm" className="mb-4">
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Resources
       </Button>
@@ -418,13 +417,15 @@ export default function SermonDetailPage() {
 
         <div className="lg:col-span-1 space-y-4">
           <Card className="shadow-xl rounded-xl sticky top-20">
-            <CardHeader className="flex flex-row justify-between items-center">
-              <CardTitle className="text-xl font-headline text-primary">My Notes</CardTitle>
-              {!editingNote && !showAddNoteEditor && (
-                 <Button variant="outline" size="sm" onClick={() => {setShowAddNoteEditor(true); setEditingNote(null);}}>
-                    <PlusCircle className="h-4 w-4 mr-2"/> Add Note
-                 </Button>
-              )}
+            <CardHeader className="pb-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                <CardTitle className="text-xl font-headline text-primary break-words">My Notes</CardTitle>
+                {!editingNote && !showAddNoteEditor && (
+                   <Button variant="outline" size="sm" onClick={() => {setShowAddNoteEditor(true); setEditingNote(null);}} className="w-full sm:w-auto shrink-0">
+                      <PlusCircle className="h-4 w-4 mr-2"/> Add Note
+                   </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {editingNote ? (

@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileOverview A Genkit flow for analyzing sermon content, e.g., generating a summary.
  *
@@ -54,7 +52,7 @@ Generated Summary:
 `,
 });
 
-const generateSermonSummaryFlow = ai.defineFlow(
+export const generateSermonSummaryFlow = ai.defineFlow(
   {
     name: 'generateSermonSummaryFlow',
     inputSchema: GenerateSermonSummaryInputSchema,

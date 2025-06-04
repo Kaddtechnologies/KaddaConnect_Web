@@ -1,4 +1,3 @@
-
 "use client";
 
 import PostCard from '@/components/home/post-card';
@@ -12,14 +11,14 @@ import Image from 'next/image';
 
 // Hero Section Component
 const HeroSection = () => (
-  <div className="relative bg-gradient-to-br from-primary/10 via-background to-accent/10 py-12 md:py-20 px-4 sm:px-6 lg:px-8 text-center overflow-hidden rounded-b-xl md:rounded-xl mb-8 shadow-lg">
+  <div className="relative bg-gradient-to-br from-primary/10 via-background to-accent/10 py-8 md:py-16 px-4 sm:px-6 lg:px-8 text-center overflow-hidden rounded-b-xl md:rounded-xl mb-6 md:mb-8 shadow-lg">
     <div className="absolute inset-0 opacity-5" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/inspiration-geometry.png')"}}></div>
     <div className="relative z-10">
-      <RadioTower className="mx-auto h-16 w-16 text-primary animate-pulse mb-4" />
-      <h1 className="text-4xl sm:text-5xl md:text-6xl font-headline text-primary mb-4">
+      <RadioTower className="mx-auto h-12 w-12 md:h-16 md:w-16 text-primary animate-pulse mb-3 md:mb-4" />
+      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-headline text-primary mb-3 md:mb-4">
         Welcome to KaddaConnect!
       </h1>
-      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+      <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 md:mb-8">
         Your space to connect, share, grow, and find encouragement within our church community.
       </p>
       <div className="flex flex-wrap justify-center gap-3 md:gap-4">
@@ -47,10 +46,10 @@ export default function HomePage() {
   };
 
   return (
-    <div className="w-full"> {/* Removed container, mx-auto, max-w, py from here. Page specific padding below. */}
+    <div className="min-h-full w-full">
       <HeroSection />
       
-      <div className="max-w-xl mx-auto space-y-6 px-3 md:px-0 pb-6 md:pb-12"> {/* Centered content column for feed */}
+      <div className="max-w-xl mx-auto space-y-6 px-3 md:px-0 pb-6 md:pb-12">
         {currentUserProfile && (
           <Card className="shadow-xl rounded-xl border border-border/70">
             <CardContent className="p-4">
@@ -74,13 +73,13 @@ export default function HomePage() {
           </Card>
         )}
         
-        {posts.length === 0 && !currentUserProfile && ( // Show if no user (and thus no create post card) and no posts
+        {posts.length === 0 && !currentUserProfile && (
            <div className="text-center text-muted-foreground py-10">
              <h2 className="text-xl font-semibold mb-2">Welcome to the Community Feed!</h2>
              <p>Posts from members will appear here. Log in or sign up to participate.</p>
            </div>
         )}
-         {posts.length === 0 && currentUserProfile && ( // Show if user is logged in but no posts yet
+         {posts.length === 0 && currentUserProfile && (
            <div className="text-center text-muted-foreground py-10">
              <h2 className="text-xl font-semibold mb-2">The feed is quiet...</h2>
              <p>Be the first to share something with the community!</p>

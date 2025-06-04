@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileOverview A Genkit flow for contextual chat about a specific sermon.
  *
@@ -72,7 +70,7 @@ Your thoughtful response to {{userName}} regarding the sermon:
 `,
 });
 
-const sermonContextualChatFlow = ai.defineFlow(
+export const sermonContextualChatFlow = ai.defineFlow(
   {
     name: 'sermonContextualChatFlow',
     inputSchema: SermonContextualChatInputSchema,

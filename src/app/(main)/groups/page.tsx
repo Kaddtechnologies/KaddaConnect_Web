@@ -37,7 +37,7 @@ export default function GroupsPage() {
   
   // Placeholder data until UserDataContext is updated
   const interestGroups: InterestGroup[] = [
-    { id: 'group1', name: 'Bible Study Fellowship', description: 'Weekly discussions on scripture.', memberCount: 15, category: 'Ministry', createdBy: 'user1', createdAt: new Date().toISOString() },
+    { id: 'group1', name: 'Bible Study Fellowship', description: 'Weekly discussions on scripture.', memberCount: 15, category: 'Ministries', createdBy: 'user1', createdAt: new Date().toISOString() },
     { id: 'group2', name: 'Hiking Adventures', description: 'Exploring local trails and nature.', memberCount: 22, category: 'Hobbies', createdBy: 'user2', createdAt: new Date().toISOString() },
     { id: 'group3', name: 'Tech Innovators', description: 'Discussing new technologies and projects.', memberCount: 8, category: 'Careers', createdBy: 'user3', createdAt: new Date().toISOString()},
   ];
@@ -63,7 +63,7 @@ export default function GroupsPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl py-0 md:py-6">
+    <div className="container mx-auto pb-6 py-0 md:py-6">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-8 gap-4">
         <div className="text-center md:text-left">
           <h1 className="text-3xl md:text-4xl font-headline text-primary mb-2 flex items-center">
