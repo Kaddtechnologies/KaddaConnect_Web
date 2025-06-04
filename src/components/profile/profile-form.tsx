@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -46,13 +45,13 @@ export default function ProfileForm() {
   }
 
   return (
-    <Card className="shadow-xl rounded-xl">
-      <CardHeader>
+    <Card className="w-full max-w-4xl mx-auto shadow-xl rounded-xl">
+      <CardHeader className="w-full">
         <CardTitle className="text-2xl font-headline">Edit Your Profile</CardTitle>
         <CardDescription>Keep your community profile up to date.</CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-6">
+      <form onSubmit={handleSubmit} className="w-full">
+        <CardContent className="w-full space-y-6">
           <div className="flex flex-col items-center space-y-3">
             <Avatar className="w-32 h-32 border-4 border-primary shadow-md">
               <AvatarImage src={profilePictureUrl || currentUserProfile.profilePictureUrl} alt={displayName} data-ai-hint="profile avatar" />
@@ -117,7 +116,7 @@ export default function ProfileForm() {
             <p className="text-xs text-muted-foreground">Separate interests with a comma.</p>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="w-full">
           <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
             <Save className="h-4 w-4 mr-2" />
             Save Changes
