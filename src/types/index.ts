@@ -6,8 +6,12 @@ export interface UserProfile {
   displayName: string;
   profilePictureUrl: string;
   dataAiHint?: string; 
+  coverImageUrl?: string; // Added for profile page
+  dataAiHintCover?: string; // Added for profile cover image
+  bio?: string; // Added for profile page
   interests: string[];
   ministry?: string;
+  joinDate?: string; // Optional: ISO string for when the user joined
 }
 
 export interface Post {
