@@ -251,4 +251,28 @@ export interface UserRsvp {
   userId: string;
   rsvpAt: string; // ISO string date
 }
+
+// --- Types for Bible Reader ---
+export interface KJVBook {
+  name: string;
+  chapters: number;
+  abbreviation: string;
+}
+
+export interface BibleVerseAPI {
+  book_id: string;
+  book_name: string;
+  chapter: number;
+  verse: number;
+  text: string;
+}
+
+export interface BibleChapterResponseAPI {
+  reference: string;
+  verses: BibleVerseAPI[];
+  text: string; // Full chapter text concatenated
+  translation_id: string;
+  translation_name: string;
+  translation_note: string;
+}
     
