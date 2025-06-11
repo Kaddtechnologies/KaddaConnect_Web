@@ -6,8 +6,12 @@ export interface UserProfile {
   displayName: string;
   profilePictureUrl: string;
   dataAiHint?: string; 
+  coverImageUrl?: string; // Added for profile page
+  dataAiHintCover?: string; // Added for profile cover image
+  bio?: string; // Added for profile page
   interests: string[];
   ministry?: string;
+  joinDate?: string; // Optional: ISO string for when the user joined
 }
 
 export interface Post {
@@ -250,5 +254,29 @@ export interface UserRsvp {
   eventId: string;
   userId: string;
   rsvpAt: string; // ISO string date
+}
+
+// --- Types for Bible Reader ---
+export interface KJVBook {
+  name: string;
+  chapters: number;
+  abbreviation: string;
+}
+
+export interface BibleVerseAPI {
+  book_id: string;
+  book_name: string;
+  chapter: number;
+  verse: number;
+  text: string;
+}
+
+export interface BibleChapterResponseAPI {
+  reference: string;
+  verses: BibleVerseAPI[];
+  text: string; // Full chapter text concatenated
+  translation_id: string;
+  translation_name: string;
+  translation_note: string;
 }
     

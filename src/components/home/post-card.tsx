@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface PostCardProps {
   post: Post;
@@ -19,16 +20,18 @@ export default function PostCard({ post, onLike }: PostCardProps) {
   return (
     <Card className="shadow-xl rounded-xl overflow-hidden border border-border/70">
       <CardHeader className="flex flex-row items-center gap-3 p-4">
-        <Avatar className="h-10 w-10 border border-border/50">
-          <AvatarImage src={post.author.profilePictureUrl} alt={post.author.displayName} data-ai-hint="profile person" />
-          <AvatarFallback className="bg-muted">{post.author.displayName.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <div className="grid gap-0.5">
-          <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors">{post.author.displayName}</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-          </p>
-        </div>
+        <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
+          <Avatar className="h-10 w-10 border border-border/50">
+            <AvatarImage src={post.author.profilePictureUrl} alt={post.author.displayName} data-ai-hint="profile person" />
+            <AvatarFallback className="bg-muted">{post.author.displayName.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="grid gap-0.5">
+            <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors">{post.author.displayName}</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+            </p>
+          </div>
+        </Link>
       </CardHeader>
       <CardContent className="p-0">
         {post.imageUrl && (
@@ -42,7 +45,7 @@ export default function PostCard({ post, onLike }: PostCardProps) {
             />
           </div>
         )}
-        <p className="p-4 text-sm text-foreground/90">{post.content}</p>
+        <p className="p-4 text-sm text-foreground/90 whitespace-pre-wrap">{post.content}</p>
       </CardContent>
       <CardFooter className="p-3 border-t border-border/70">
         <div className="flex justify-around w-full">
