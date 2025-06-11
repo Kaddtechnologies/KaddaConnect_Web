@@ -1,4 +1,7 @@
 
+'use server';
+
+import 'server-only';
 import {genkit} from 'genkit';
 import {gemini10Pro, gemini20Flash, gemini20FlashLite, gemini25ProExp0325, gemini25ProPreview0325, googleAI} from '@genkit-ai/googleai';
 
