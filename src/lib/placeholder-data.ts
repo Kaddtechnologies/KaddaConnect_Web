@@ -5,40 +5,62 @@ export const placeholderUser: UserProfile = {
   id: 'user1',
   email: 'user@example.com',
   displayName: 'Alex Doe',
-  profilePictureUrl: 'https://placehold.co/100x100.png',
+  profilePictureUrl: 'https://placehold.co/150x150.png',
   dataAiHint: 'profile person',
-  interests: ['Reading', 'Music', 'Volunteering'],
+  coverImageUrl: 'https://placehold.co/1200x400.png',
+  dataAiHintCover: 'abstract landscape',
+  bio: 'Passionate about community building, technology, and faith. Member of the Music Ministry. Always open for a chat about good books or new ideas!',
+  interests: ['Reading', 'Music', 'Volunteering', 'Tech'],
   ministry: 'Music Ministry',
+  joinDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365).toISOString(), // Joined 1 year ago
 };
 
 export const placeholderPosts: Post[] = [
   {
     id: 'post1',
-    author: { id: 'user2', displayName: 'Jane Smith', profilePictureUrl: 'https://placehold.co/50x50.png' },
+    author: { id: 'user2', displayName: 'Jane Smith', profilePictureUrl: 'https://placehold.co/100x100.png' },
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'community event',
-    content: 'Great turnout at the community picnic today! Thanks to everyone who came.',
+    content: 'Great turnout at the community picnic today! Thanks to everyone who came. Such a blessed time of fellowship and fun under the sun. ☀️ #community #blessed',
     likes: 15,
     likedByMe: false,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
   },
   {
     id: 'post2',
-    author: { id: 'user3', displayName: 'Mike Johnson', profilePictureUrl: 'https://placehold.co/50x50.png' },
-    content: 'Just a reminder about the upcoming charity drive. Let\'s make a difference!',
+    author: { id: 'user3', displayName: 'Mike Johnson', profilePictureUrl: 'https://placehold.co/100x100.png' },
+    content: 'Just a reminder about the upcoming charity drive this weekend. Your contributions, big or small, can make a huge difference. Let\'s show our community\'s generosity! Full details on the events page.',
     likes: 22,
     likedByMe: true,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
   },
   {
     id: 'post3',
-    author: { id: 'user1', displayName: 'Alex Doe', profilePictureUrl: 'https://placehold.co/100x100.png' },
+    author: { id: 'user1', displayName: 'Alex Doe', profilePictureUrl: placeholderUser.profilePictureUrl },
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'church building',
-    content: 'Beautiful service this morning. Feeling blessed and inspired for the week ahead!',
+    dataAiHint: 'church building sunrise',
+    content: 'Beautiful service this morning. Feeling blessed and inspired for the week ahead! The message on hope really resonated. 🙏 #faith #inspiration',
     likes: 30,
     likedByMe: false,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
+  },
+   {
+    id: 'post4',
+    author: { id: 'user4', displayName: 'Sarah Lee', profilePictureUrl: 'https://placehold.co/100x100.png' },
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAiHint: 'volunteer group',
+    content: 'Our outreach team had an amazing time serving at the local shelter yesterday. So rewarding to connect and help. #volunteer #service #communitylove',
+    likes: 45,
+    likedByMe: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString(), // 28 hours ago
+  },
+  {
+    id: 'post5',
+    author: { id: 'user1', displayName: 'Alex Doe', profilePictureUrl: placeholderUser.profilePictureUrl },
+    content: 'Thinking about starting a new book club focusing on spiritual growth. Anyone interested in joining? Let me know!',
+    likes: 18,
+    likedByMe: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
   },
 ];
 
@@ -47,29 +69,41 @@ export const placeholderMembers: Member[] = [
   {
     id: 'user2',
     displayName: 'Jane Smith',
-    profilePictureUrl: 'https://placehold.co/100x100.png',
-    dataAiHint: 'profile person',
-    interests: ['Gardening', 'Bible Study'],
+    profilePictureUrl: 'https://placehold.co/150x150.png',
+    dataAiHint: 'profile person smiling',
+    coverImageUrl: 'https://placehold.co/1200x400.png',
+    dataAiHintCover: 'garden flowers',
+    bio: 'Lover of nature, good conversations, and serving others. Active in the Welcome Team and enjoys gardening in my free time.Blessed to be part of this community.',
+    interests: ['Gardening', 'Bible Study', 'Hospitality'],
     ministry: 'Welcome Team',
     email: 'jane@example.com',
+    joinDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 700).toISOString(), // Joined ~2 years ago
   },
   {
     id: 'user3',
     displayName: 'Mike Johnson',
-    profilePictureUrl: 'https://placehold.co/100x100.png',
-    dataAiHint: 'profile person',
-    interests: ['Tech', 'Youth Group'],
+    profilePictureUrl: 'https://placehold.co/150x150.png',
+    dataAiHint: 'profile person outdoors',
+    coverImageUrl: 'https://placehold.co/1200x400.png',
+    dataAiHintCover: 'youth group activity',
+    bio: 'Youth Ministry leader, tech enthusiast, and always up for an adventure. My goal is to help young people grow in their faith and discover their purpose.',
+    interests: ['Tech', 'Youth Group', 'Hiking', 'Mentoring'],
     ministry: 'Youth Ministry',
     email: 'mike@example.com',
+    joinDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 500).toISOString(), // Joined ~1.5 years ago
   },
   {
     id: 'user4',
     displayName: 'Sarah Lee',
-    profilePictureUrl: 'https://placehold.co/100x100.png',
-    dataAiHint: 'profile person',
-    interests: ['Cooking', 'Outreach'],
+    profilePictureUrl: 'https://placehold.co/150x150.png',
+    dataAiHint: 'profile person friendly',
+    coverImageUrl: 'https://placehold.co/1200x400.png',
+    dataAiHintCover: 'community kitchen',
+    bio: 'Dedicated to making a difference through outreach and community service. I believe in showing God\'s love through action. Also enjoy cooking for friends and family.',
+    interests: ['Cooking', 'Outreach', 'Social Justice'],
     ministry: 'Outreach Committee',
     email: 'sarah@example.com',
+    joinDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1000).toISOString(), // Joined ~3 years ago
   },
 ];
 
@@ -407,5 +441,3 @@ export const placeholderUserRsvps: UserRsvp[] = [
   { eventId: 'event1', userId: 'user1', rsvpAt: new Date().toISOString() },
 ];
 
-// (already added in previous steps, just confirming its presence for context loading)
-// export { placeholderInterestGroups }; // This line was causing the duplicate export error
