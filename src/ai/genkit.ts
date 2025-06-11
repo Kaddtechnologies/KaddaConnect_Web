@@ -1,20 +1,17 @@
 
+'use server';
+
+import 'server-only';
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {gemini10Pro, gemini20Flash, gemini20FlashLite, gemini25ProExp0325, gemini25ProPreview0325, googleAI} from '@genkit-ai/googleai';
 
 // Ensure your GOOGLE_API_KEY environment variable is set in your Genkit execution environment.
 export const ai = genkit({
   plugins: [
-    googleAI(),
+    googleAI({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || 'AIzaSyAGxugbJDi84dIQeIvx6moBPdCDwJdhJIw', // Use the API key from .env
+      models: [gemini20FlashLite,gemini10Pro,gemini25ProPreview0325,gemini20Flash, gemini25ProExp0325], // Explicitly include the gemini20FlashLite model
+    }),
   ],
-  model: 'googleai/gemini-2.0-flash', // Default model for generate calls
-  embedder: 'googleai/text-embedding-004', // Default model for embedText calls
-  telemetry: {
-    instrumentation: {
-      // For OpenTelemetry, you would configure exporters here if needed
-    },
-    logger: {
-      // Configure logging level and format if needed
-    },
-  },
+  model: gemini20Flash, // Use gemini20Flash as the default model
 });
